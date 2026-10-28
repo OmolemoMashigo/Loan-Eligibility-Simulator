@@ -1,7 +1,7 @@
 ---
 name: Phase
 about: Track a delivery phase as a checklist of tasks
-title: "[Phase] "
+title: '[Phase] '
 labels: []
 ---
 
