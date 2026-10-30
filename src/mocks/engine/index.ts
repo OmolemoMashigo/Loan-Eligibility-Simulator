@@ -8,6 +8,18 @@ export {
 } from './amortisation';
 export type { AmortisationInput, AmortisationResult } from './amortisation';
 export { selectAnnualInterestRate } from './rates';
+export {
+  analyseAffordability,
+  calculateDebtToIncomeRatio,
+  calculateDisposableIncome,
+  calculateLoanToIncomeRatio,
+  calculateMaxAffordableAmount,
+  scoreAffordability,
+} from './affordability';
+export type {
+  AffordabilityBreakdown,
+  AffordabilityInput,
+} from './affordability';
 
 export {
   AFFORDABILITY_SCORE_THRESHOLDS,
