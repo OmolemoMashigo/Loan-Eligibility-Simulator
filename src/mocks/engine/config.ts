@@ -88,6 +88,24 @@ export const RISK_CATEGORY_THRESHOLDS = {
   medium: 60,
 } as const;
 
+/** Lower interest rate (better credit band) maps to a higher score. */
+export const CREDIT_RATE_COMPONENT_SCORES: readonly {
+  annualRatePercent: number;
+  score: number;
+}[] = [
+  { annualRatePercent: 10.5, score: 100 },
+  { annualRatePercent: 11.5, score: 90 },
+  { annualRatePercent: 12.5, score: 80 },
+  { annualRatePercent: 14.5, score: 55 },
+  { annualRatePercent: 16.5, score: 40 },
+  { annualRatePercent: 18.5, score: 25 },
+];
+
+export const UNEMPLOYED_EMPLOYMENT_SCORE = 25;
+export const RETIRED_EMPLOYMENT_SCORE = 55;
+/** 24 months of employment maps to a full employment-component score. */
+export const EMPLOYMENT_DURATION_FULL_SCORE_MONTHS = 24;
+
 /** SI-4: age 18–65 for every status, including retired. */
 export const AGE_MIN = 18;
 export const AGE_MAX = 65;
