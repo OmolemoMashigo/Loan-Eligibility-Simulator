@@ -7,6 +7,7 @@ export {
   toCents,
 } from './amortisation';
 export type { AmortisationInput, AmortisationResult } from './amortisation';
+export { selectAnnualInterestRate } from './rates';
 
 export {
   AFFORDABILITY_SCORE_THRESHOLDS,
