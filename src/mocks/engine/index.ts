@@ -25,6 +25,20 @@ export {
   evaluateEligibility,
   riskFromLikelihood,
 } from './decision';
+export {
+  validateCalculateRateRequest,
+  validateEligibilityRequest,
+} from './validate';
+export type {
+  ValidationFailure,
+  ValidationResult,
+  ValidationSuccess,
+} from './validate';
+export {
+  EMPLOYMENT_STATUS_OPTIONS,
+  LOCAL_VALIDATION_DEFAULTS,
+  VALIDATION_RULES_RESPONSE,
+} from './validationRules';
 
 export {
   AFFORDABILITY_SCORE_THRESHOLDS,
