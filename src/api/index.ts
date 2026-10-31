@@ -1,0 +1,26 @@
+export { ApiError, isApiError } from './errors';
+export type { ApiErrorCode, ApiErrorKind, FieldErrorMap } from './errors';
+export {
+  DEFAULT_API_BASE_URL,
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  getApiBaseUrl,
+} from './client';
+export type { RequestOptions } from './client';
+export {
+  calculateRate,
+  checkEligibility,
+  fetchLoanProducts,
+  fetchValidationRules,
+} from './loans';
+export type {
+  ApiErrorBody,
+  CalculateRateRequest,
+  CalculateRateResponse,
+  EligibilityRequest,
+  EligibilityResponse,
+  EmploymentStatus,
+  LoanPurpose,
+  LoanType,
+  ProductsResponse,
+  ValidationRulesResponse,
+} from './schemas';

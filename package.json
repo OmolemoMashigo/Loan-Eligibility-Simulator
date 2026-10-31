@@ -23,7 +23,8 @@
   "dependencies": {
     "msw": "^2.11.3",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
