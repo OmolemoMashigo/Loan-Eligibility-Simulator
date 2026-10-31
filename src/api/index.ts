@@ -7,11 +7,19 @@ export {
 } from './client';
 export type { RequestOptions } from './client';
 export {
+  useCalculateRate,
+  useCheckEligibility,
+  useLoanProducts,
+  useValidationRules,
+} from './hooks';
+export {
   calculateRate,
   checkEligibility,
   fetchLoanProducts,
   fetchValidationRules,
 } from './loans';
+export { createQueryClient } from './queryClient';
+export { loanQueryKeys } from './queryKeys';
 export type {
   ApiErrorBody,
   CalculateRateRequest,

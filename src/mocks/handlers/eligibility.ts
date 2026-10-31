@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw';
-import { apiUrl } from '@/mocks/api';
+import { apiMatch } from '@/mocks/api';
 import {
   evaluateEligibility,
   validateEligibilityRequest,
@@ -13,7 +13,7 @@ import {
 } from './errors';
 
 export const eligibilityHandlers = [
-  http.post(apiUrl('/loans/eligibility'), async ({ request }) => {
+  http.post(apiMatch('/loans/eligibility'), async ({ request }) => {
     await applyMockLatency();
 
     if (isSimulatedServerError(request)) {

@@ -1,16 +1,26 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { AppProviders } from './app/providers';
+import { enableMocks } from './mocks/enableMocks';
 import './index.css';
 
-const rootElement = document.getElementById('root');
+async function bootstrap(): Promise<void> {
+  await enableMocks();
 
-if (!rootElement) {
-  throw new Error('Root element #root was not found');
+  const rootElement = document.getElementById('root');
+
+  if (!rootElement) {
+    throw new Error('Root element #root was not found');
+  }
+
+  createRoot(rootElement).render(
+    <StrictMode>
+      <AppProviders>
+        <App />
+      </AppProviders>
+    </StrictMode>,
+  );
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+void bootstrap();

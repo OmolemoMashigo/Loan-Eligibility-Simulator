@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw';
-import { apiUrl } from '@/mocks/api';
+import { apiMatch } from '@/mocks/api';
 import {
   calculateAmortisationSchedule,
   selectAnnualInterestRate,
@@ -15,7 +15,7 @@ import {
 } from './errors';
 
 export const calculateRateHandlers = [
-  http.post(apiUrl('/loans/calculate-rate'), async ({ request }) => {
+  http.post(apiMatch('/loans/calculate-rate'), async ({ request }) => {
     await applyMockLatency();
 
     if (isSimulatedServerError(request)) {
