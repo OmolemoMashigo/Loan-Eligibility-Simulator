@@ -6,3 +6,4 @@ blob-report
 node_modules
 package-lock.json
 *.svg
+public/mockServiceWorker.js
