@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -361,6 +361,9 @@ describe('journeys', () => {
       expect(JSON.stringify(eligibilityRequests[0])).not.toMatch(/creditScore/);
       expect(JSON.stringify(scheduleRequests[0])).not.toMatch(/creditScore/);
       expect(shown('Interest rate')).toBe('14,5% a year');
+      expect(
+        screen.getByText('Add your credit score for a more accurate estimate.'),
+      ).toBeVisible();
     });
 
     it('prices a given score in its own band', async () => {
@@ -372,6 +375,37 @@ describe('journeys', () => {
       await screen.findByRole('status', { name: /you are likely eligible/i });
 
       expect(shown('Interest rate')).toBe('12,5% a year');
+      expect(
+        screen.queryByText(
+          'Add your credit score for a more accurate estimate.',
+        ),
+      ).not.toBeInTheDocument();
+    });
+
+    it('keeps asking for a score after the amount is changed in the what-if card', async () => {
+      const user = await openApp();
+
+      await fillValidForm(user);
+      await user.clear(
+        screen.getByRole('textbox', { name: 'Credit score (optional)' }),
+      );
+      await submit(user);
+      await screen.findByRole('status', { name: /you are likely eligible/i });
+
+      const amount = screen.getByRole('textbox', { name: /^Loan amount/ });
+
+      await user.clear(amount);
+      await user.type(amount, '40000');
+
+      await waitFor(
+        () => {
+          expect(shown('Recommended amount')).toMatch(/^R\s40\s000$/);
+        },
+        { timeout: 3000 },
+      );
+      expect(
+        screen.getByText('Add your credit score for a more accurate estimate.'),
+      ).toBeVisible();
     });
   });
 });
