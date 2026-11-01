@@ -1,12 +1,13 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App } from '@/App';
+import { renderWithProviders } from '@/test/renderWithProviders';
 
 afterEach(cleanup);
 
 describe('page layout', () => {
   it('offers a skip link that points at the main landmark', () => {
-    render(<App />);
+    renderWithProviders(<App />);
 
     const skip = screen.getByRole('link', { name: /skip to main content/i });
     const main = screen.getByRole('main');
@@ -16,7 +17,7 @@ describe('page layout', () => {
   });
 
   it('keeps the estimate disclaimer in the main content', () => {
-    render(<App />);
+    renderWithProviders(<App />);
 
     const disclaimer = screen.getByRole('note', {
       name: /estimate disclaimer/i,
@@ -28,7 +29,7 @@ describe('page layout', () => {
   });
 
   it('does not keep the sample form gallery', () => {
-    render(<App />);
+    renderWithProviders(<App />);
 
     expect(
       screen.queryByRole('form', { name: /sample form controls/i }),

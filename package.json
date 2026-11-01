@@ -21,10 +21,12 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@hookform/resolvers": "^7.0.1",
     "@tanstack/react-query": "^5.105.0",
     "msw": "^2.11.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hook-form": "^7.91.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

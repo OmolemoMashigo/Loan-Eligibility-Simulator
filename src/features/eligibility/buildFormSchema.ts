@@ -1,4 +1,4 @@
-import { z, type ZodType } from 'zod';
+import { z } from 'zod';
 import type { EligibilityRequest } from '@/api';
 import {
   FORM_VALIDATION_DEFAULTS,
@@ -25,7 +25,9 @@ export type EligibilityFormRules = {
   };
 };
 
-export type EligibilityFormSchema = ZodType<EligibilityRequest>;
+export type EligibilityFormSchema = ReturnType<
+  typeof buildEligibilityFormSchema
+>;
 
 export type FormFieldMeta = {
   personalInfo: {
@@ -46,9 +48,13 @@ export type FormFieldMeta = {
   };
 };
 
-const rawNumberInput = z.union([z.string(), z.number()]);
+const rawNumberInput = z.string();
 
 export function parseNumericInput(value: unknown): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : Number.NaN;
   }
@@ -116,7 +122,7 @@ export function buildFormFieldMeta(
 export function buildEligibilityFormSchema(
   rules: EligibilityFormRules,
   defaults: FormValidationDefaults = FORM_VALIDATION_DEFAULTS,
-): EligibilityFormSchema {
+) {
   const meta = buildFormFieldMeta(rules, defaults);
 
   return z.object({
@@ -179,7 +185,7 @@ export function buildEligibilityFormSchema(
       loanTerm: numericField(meta.loanDetails.loanTerm, { integer: true }),
       loanPurpose: enumField(meta.loanDetails.loanPurpose),
     }),
-  }) as EligibilityFormSchema;
+  });
 }
 
 export function formFieldErrors(error: {

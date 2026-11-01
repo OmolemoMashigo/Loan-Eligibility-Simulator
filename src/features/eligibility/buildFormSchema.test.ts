@@ -27,6 +27,7 @@ describe('parseNumericInput', () => {
   it('treats blank text as missing and keeps 0', () => {
     expect(parseNumericInput('')).toBeUndefined();
     expect(parseNumericInput('   ')).toBeUndefined();
+    expect(parseNumericInput(undefined)).toBeUndefined();
     expect(parseNumericInput(0)).toBe(0);
     expect(parseNumericInput('0')).toBe(0);
   });
@@ -125,7 +126,6 @@ describe('buildEligibilityFormSchema', () => {
 
     expect(blank.success).toBe(true);
     if (blank.success) {
-      expect(blank.data.financialInfo.creditScore).toBeUndefined();
       expect('creditScore' in blank.data.financialInfo).toBe(false);
     }
 
