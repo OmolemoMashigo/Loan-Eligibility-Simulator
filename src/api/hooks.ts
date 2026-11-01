@@ -1,4 +1,9 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  skipToken,
+  useMutation,
+  useQuery,
+} from '@tanstack/react-query';
 import {
   calculateRate,
   checkEligibility,
@@ -27,6 +32,18 @@ export function useValidationRules() {
 export function useCheckEligibility() {
   return useMutation({
     mutationFn: (body: EligibilityRequest) => checkEligibility(body),
+  });
+}
+
+/**
+ * The repayment schedule for one amount and term. Waits while there is no
+ * request, and keeps showing the previous schedule while the next one loads.
+ */
+export function useRepaymentSchedule(body: CalculateRateRequest | undefined) {
+  return useQuery({
+    queryKey: loanQueryKeys.schedule(body),
+    queryFn: body ? ({ signal }) => calculateRate(body, { signal }) : skipToken,
+    placeholderData: keepPreviousData,
   });
 }
 

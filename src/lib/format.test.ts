@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatMonthDuration, formatWholeRand } from './format';
+import { formatMonthDuration, formatPercent, formatWholeRand } from './format';
+
+describe('formatPercent', () => {
+  it('shows whole and one-decimal percentages with a % sign', () => {
+    expect(formatPercent(85)).toBe('85%');
+    expect(formatPercent(0)).toBe('0%');
+    expect(formatPercent(12.5)).toMatch(/^12[,.]5%$/);
+  });
+});
 
 describe('formatWholeRand', () => {
   it('formats rand amounts in en-ZA without cents', () => {

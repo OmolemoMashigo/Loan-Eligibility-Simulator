@@ -3,7 +3,7 @@ import { HttpResponse, http } from 'msw';
 import { type ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AppProviders } from '@/app/providers';
-import { apiUrl } from '@/mocks/api';
+import { apiMatch, apiUrl } from '@/mocks/api';
 import { SPEC_SAMPLE_REQUEST } from '@/mocks/engine';
 import { setMockLatency } from '@/mocks/latency';
 import { server } from '@/mocks/server';
@@ -12,9 +12,11 @@ import {
   useCalculateRate,
   useCheckEligibility,
   useLoanProducts,
+  useRepaymentSchedule,
   useValidationRules,
 } from './hooks';
 import { createQueryClient } from './queryClient';
+import type { CalculateRateRequest } from './schemas';
 
 function createWrapper() {
   const queryClient = createQueryClient({
@@ -105,6 +107,54 @@ describe('loan query hooks', () => {
     expect(result.current.data?.interestRate).toBe(12.5);
     expect(result.current.data?.monthlyPayment).toBe(7_096.1);
     expect(result.current.data?.paymentSchedule).toHaveLength(24);
+  });
+
+  it('waits for a request before loading a schedule', () => {
+    const { result } = renderHook(() => useRepaymentSchedule(undefined), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it('keeps the previous schedule visible while the next one loads', async () => {
+    const first: CalculateRateRequest = {
+      loanAmount: 150_000,
+      loanTerm: 24,
+      creditScore: 650,
+      loanType: 'personal_loan',
+    };
+    const second: CalculateRateRequest = { ...first, loanTerm: 12 };
+    const { result, rerender } = renderHook(
+      ({ body }: { body: CalculateRateRequest }) => useRepaymentSchedule(body),
+      { wrapper: createWrapper(), initialProps: { body: first } },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.paymentSchedule).toHaveLength(24);
+    expect(result.current.isPlaceholderData).toBe(false);
+
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    server.use(
+      http.post(apiMatch('/loans/calculate-rate'), async () => {
+        await gate;
+      }),
+    );
+
+    rerender({ body: second });
+
+    await waitFor(() => expect(result.current.isPlaceholderData).toBe(true));
+    expect(result.current.data?.paymentSchedule).toHaveLength(24);
+
+    release();
+
+    await waitFor(() => expect(result.current.isPlaceholderData).toBe(false));
+    expect(result.current.data?.paymentSchedule).toHaveLength(12);
   });
 
   it('surfaces a validation ApiError from eligibility', async () => {

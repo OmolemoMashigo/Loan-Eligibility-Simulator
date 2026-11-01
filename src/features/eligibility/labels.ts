@@ -35,6 +35,27 @@ export function loanPurposeOptions(values: readonly string[]) {
   }));
 }
 
+const RISK_CATEGORY_LABELS: Record<string, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+};
+
+export function riskCategoryLabel(value: string): string {
+  return RISK_CATEGORY_LABELS[value] ?? humanizeToken(value);
+}
+
+const AFFORDABILITY_SCORE_LABELS: Record<string, string> = {
+  excellent: 'Excellent',
+  good: 'Good',
+  fair: 'Fair',
+  poor: 'Poor',
+};
+
+export function affordabilityScoreLabel(value: string): string {
+  return AFFORDABILITY_SCORE_LABELS[value] ?? humanizeToken(value);
+}
+
 function humanizeToken(value: string): string {
   return value
     .split('_')

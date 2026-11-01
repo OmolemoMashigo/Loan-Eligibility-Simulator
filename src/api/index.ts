@@ -10,6 +10,7 @@ export {
   useCalculateRate,
   useCheckEligibility,
   useLoanProducts,
+  useRepaymentSchedule,
   useValidationRules,
 } from './hooks';
 export {

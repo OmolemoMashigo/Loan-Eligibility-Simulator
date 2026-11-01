@@ -12,6 +12,7 @@ import {
   useLoanProducts,
   useValidationRules,
   type EligibilityRequest,
+  type EligibilityResponse,
 } from '@/api';
 import { Alert } from '@/components/Alert/Alert';
 import { LoadingBlock } from '@/components/LoadingBlock/LoadingBlock';
@@ -20,7 +21,9 @@ import {
   buildFormFieldMeta,
   type EligibilityFormRules,
 } from './buildFormSchema';
+import { DeclineNextSteps } from './DeclineNextSteps';
 import styles from './EligibilityForm.module.css';
+import { EligibilityResult } from './EligibilityResult';
 import {
   summariseFieldMessages,
   summariseFormErrors,
@@ -39,6 +42,14 @@ import {
   type LoanProductInfo,
 } from './loanProduct';
 import { PersonalDetailsSection } from './PersonalDetailsSection';
+import { buildScheduleRequest } from './scheduleRequest';
+import { ScheduleSection } from './ScheduleSection';
+import { WhatIfCard } from './WhatIfCard';
+
+type ShownResult = {
+  request: EligibilityRequest;
+  response: EligibilityResponse;
+};
 
 export function EligibilityForm() {
   const rulesQuery = useValidationRules();
@@ -108,6 +119,12 @@ function EligibilityFormFields({
     shouldFocusError: false,
   });
   const checkEligibility = useCheckEligibility();
+  // A second mutation, so a what-if recalculation never clears the result.
+  const recalculate = useCheckEligibility();
+  // The result on screen: the last good one, even while a newer one loads.
+  const [shown, setShown] = useState<ShownResult>();
+  // Bumped on every new submit, so a late what-if answer can be ignored.
+  const generation = useRef(0);
   const formRef = useRef<HTMLFormElement>(null);
   const [summary, setSummary] = useState<ErrorSummaryItem[]>();
   // New key = new alert node = focus moves to the latest message.
@@ -139,9 +156,28 @@ function EligibilityFormFields({
 
   function send(request: EligibilityRequest) {
     setSummary(undefined);
+    setShown(undefined);
+    generation.current += 1;
+    recalculate.reset();
     checkEligibility.mutate(request, {
-      onSuccess: showFeedback,
+      onSuccess: (response) => {
+        setShown({ request, response });
+        showFeedback();
+      },
       onError: handleSubmitError,
+    });
+  }
+
+  // No showFeedback here: a refresh must not pull focus off the fields.
+  function recalculateWith(request: EligibilityRequest) {
+    const run = generation.current;
+
+    recalculate.mutate(request, {
+      onSuccess: (response) => {
+        if (run === generation.current) {
+          setShown({ request, response });
+        }
+      },
     });
   }
 
@@ -155,6 +191,12 @@ function EligibilityFormFields({
   }
 
   const failed = checkEligibility.isError && !summary;
+  const scheduleRequest = shown
+    ? buildScheduleRequest(
+        shown.request,
+        shown.response.recommendedLoan.recommendedAmount,
+      )
+    : undefined;
 
   return (
     <FormProvider {...form}>
@@ -234,13 +276,54 @@ function EligibilityFormFields({
             </button>
           </Alert>
         ) : null}
-        {checkEligibility.isSuccess && !summary ? (
-          <Alert
+        {shown && !summary ? (
+          <EligibilityResult
             key={feedbackKey}
-            ref={focusOnMount}
-            tone="success"
-            title="Eligibility check complete"
-          />
+            response={shown.response}
+            loanTerm={shown.request.loanDetails.loanTerm}
+            updating={recalculate.isPending}
+            nextSteps={
+              shown.response.eligibilityResult.isEligible ? undefined : (
+                <DeclineNextSteps
+                  maxAmount={shown.response.recommendedLoan.maxAmount}
+                  requestedAmount={shown.request.loanDetails.requestedAmount}
+                  loanTerm={shown.request.loanDetails.loanTerm}
+                  maxTerm={meta.loanDetails.loanTerm.max}
+                  disposableIncome={
+                    shown.response.affordabilityAnalysis.disposableIncome
+                  }
+                  onEditDetails={() => {
+                    focusField('personalInfo.age');
+                  }}
+                />
+              )
+            }
+            adjust={
+              <WhatIfCard
+                schema={schema}
+                rules={meta.loanDetails}
+                request={shown.request}
+                updating={recalculate.isPending}
+                failure={
+                  recalculate.isError
+                    ? isApiError(recalculate.error)
+                      ? recalculate.error.message
+                      : 'Please try again.'
+                    : undefined
+                }
+                onRecalculate={recalculateWith}
+                onRetry={() => {
+                  if (recalculate.variables) {
+                    recalculateWith(recalculate.variables);
+                  }
+                }}
+              />
+            }
+          >
+            {scheduleRequest ? (
+              <ScheduleSection request={scheduleRequest} />
+            ) : null}
+          </EligibilityResult>
         ) : null}
       </form>
     </FormProvider>

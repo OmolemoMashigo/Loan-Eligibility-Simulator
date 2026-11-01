@@ -10,6 +10,15 @@ export function formatWholeRand(amount: number): string {
   return wholeRandFormatter.format(amount);
 }
 
+const percentFormatter = new Intl.NumberFormat('en-ZA', {
+  maximumFractionDigits: 1,
+});
+
+/** Takes a percentage like 12.5, not a fraction like 0.125. */
+export function formatPercent(percent: number): string {
+  return `${percentFormatter.format(percent)}%`;
+}
+
 export function formatMonthDuration(months: number): string {
   const monthLabel = months === 1 ? '1 month' : `${months} months`;
 
