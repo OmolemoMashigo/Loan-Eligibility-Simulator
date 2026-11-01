@@ -8,10 +8,12 @@ import {
 } from 'react-hook-form';
 import {
   isApiError,
+  useCalculateRate,
   useCheckEligibility,
   useLoanProducts,
   useValidationRules,
   type EligibilityRequest,
+  type EligibilityResponse,
 } from '@/api';
 import { Alert } from '@/components/Alert/Alert';
 import { LoadingBlock } from '@/components/LoadingBlock/LoadingBlock';
@@ -40,6 +42,8 @@ import {
   type LoanProductInfo,
 } from './loanProduct';
 import { PersonalDetailsSection } from './PersonalDetailsSection';
+import { buildScheduleRequest } from './scheduleRequest';
+import { RepaymentSchedule } from './RepaymentSchedule';
 
 export function EligibilityForm() {
   const rulesQuery = useValidationRules();
@@ -109,6 +113,7 @@ function EligibilityFormFields({
     shouldFocusError: false,
   });
   const checkEligibility = useCheckEligibility();
+  const calculateRate = useCalculateRate();
   const formRef = useRef<HTMLFormElement>(null);
   const [summary, setSummary] = useState<ErrorSummaryItem[]>();
   // New key = new alert node = focus moves to the latest message.
@@ -138,10 +143,69 @@ function EligibilityFormFields({
     showFeedback();
   }
 
+  function loadSchedule(
+    request: EligibilityRequest,
+    response: EligibilityResponse,
+  ) {
+    const scheduleRequest = buildScheduleRequest(
+      request,
+      response.recommendedLoan.recommendedAmount,
+    );
+
+    if (scheduleRequest) {
+      calculateRate.mutate(scheduleRequest);
+    }
+  }
+
+  function scheduleCard(
+    request: EligibilityRequest,
+    response: EligibilityResponse,
+  ) {
+    if (
+      !buildScheduleRequest(request, response.recommendedLoan.recommendedAmount)
+    ) {
+      return null;
+    }
+
+    if (calculateRate.isError) {
+      return (
+        <RepaymentSchedule
+          status="error"
+          message={
+            isApiError(calculateRate.error)
+              ? calculateRate.error.message
+              : 'Please try again.'
+          }
+          onRetry={() => {
+            if (calculateRate.variables) {
+              calculateRate.mutate(calculateRate.variables);
+            }
+          }}
+        />
+      );
+    }
+
+    if (calculateRate.isSuccess) {
+      return (
+        <RepaymentSchedule
+          status="ready"
+          schedule={calculateRate.data.paymentSchedule}
+          loanAmount={calculateRate.variables.loanAmount}
+        />
+      );
+    }
+
+    return <RepaymentSchedule status="loading" />;
+  }
+
   function send(request: EligibilityRequest) {
     setSummary(undefined);
+    calculateRate.reset();
     checkEligibility.mutate(request, {
-      onSuccess: showFeedback,
+      onSuccess: (response) => {
+        showFeedback();
+        loadSchedule(request, response);
+      },
       onError: handleSubmitError,
     });
   }
@@ -240,7 +304,9 @@ function EligibilityFormFields({
             key={feedbackKey}
             response={checkEligibility.data}
             loanTerm={checkEligibility.variables.loanDetails.loanTerm}
-          />
+          >
+            {scheduleCard(checkEligibility.variables, checkEligibility.data)}
+          </EligibilityResult>
         ) : null}
       </form>
     </FormProvider>

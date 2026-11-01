@@ -10,6 +10,7 @@ import { renderWithProviders } from '@/test/renderWithProviders';
 import { EligibilityForm } from './EligibilityForm';
 
 const eligibilityUrl = apiMatch('/loans/eligibility');
+const calculateRateUrl = apiMatch('/loans/calculate-rate');
 
 function recordRequests(): unknown[] {
   const bodies: unknown[] = [];
@@ -260,6 +261,149 @@ describe('EligibilityForm submit', () => {
     expect(
       screen.getAllByRole('region', { name: 'Eligibility result' }),
     ).toHaveLength(1);
+  });
+
+  it('loads the repayment schedule for the recommended loan and shows it in stages', async () => {
+    const scheduleRequests: unknown[] = [];
+
+    server.use(
+      http.post(calculateRateUrl, async ({ request }) => {
+        scheduleRequests.push(await request.clone().json());
+      }),
+    );
+    const user = await renderForm();
+
+    await fillValidForm(user);
+    await submit(user);
+
+    const table = await screen.findByRole('table', {
+      name: /monthly payments on r\s150\s000 over 24 months/i,
+    });
+
+    expect(scheduleRequests).toEqual([
+      {
+        loanAmount: 150_000,
+        loanTerm: 24,
+        loanType: 'personal_loan',
+        creditScore: 650,
+      },
+    ]);
+    expect(within(table).getAllByRole('row')).toHaveLength(1 + 6);
+
+    // The first month's payment is the monthly repayment shown above it.
+    const monthlyRepayment =
+      screen.getByText('Monthly repayment').nextSibling?.textContent;
+    const firstMonth = within(table).getByRole('rowheader', { name: '1' })
+      .parentElement as HTMLElement;
+
+    expect(monthlyRepayment).toMatch(/^R\s7\s096$/);
+    expect(within(firstMonth).getAllByRole('cell')[0]?.textContent).toBe(
+      monthlyRepayment,
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: 'Show all 24 months' }),
+    );
+
+    expect(within(table).getAllByRole('row')).toHaveLength(1 + 24);
+    expect(
+      screen.getByRole('status', { name: /you are likely eligible/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the schedule for a declined loan too, using what would fit', async () => {
+    const scheduleRequests: unknown[] = [];
+
+    server.use(
+      http.post(calculateRateUrl, async ({ request }) => {
+        scheduleRequests.push(await request.clone().json());
+      }),
+    );
+    const user = await renderForm();
+
+    await fillValidForm(user);
+    const expenses = screen.getByRole('textbox', { name: 'Monthly expenses' });
+    await user.clear(expenses);
+    await user.type(expenses, '24000');
+    await submit(user);
+
+    await screen.findByRole('table', {
+      name: /monthly payments on r\s20\s000/i,
+    });
+
+    expect(scheduleRequests).toEqual([
+      expect.objectContaining({ loanAmount: 20_000, loanTerm: 24 }),
+    ]);
+  });
+
+  it('asks for no schedule when no amount is affordable', async () => {
+    const scheduleRequests: unknown[] = [];
+
+    server.use(
+      http.post(calculateRateUrl, async ({ request }) => {
+        scheduleRequests.push(await request.clone().json());
+      }),
+    );
+    const user = await renderForm();
+
+    await fillValidForm(user);
+    const expenses = screen.getByRole('textbox', { name: 'Monthly expenses' });
+    await user.clear(expenses);
+    await user.type(expenses, '24950');
+    await submit(user);
+
+    await screen.findByRole('status', { name: /unlikely to be eligible/i });
+
+    expect(
+      screen.getByText(/could not find a loan amount that fits/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Repayment schedule' }),
+    ).not.toBeInTheDocument();
+    expect(scheduleRequests).toHaveLength(0);
+  });
+
+  it('keeps the result when the schedule fails and loads it on try again', async () => {
+    server.use(
+      http.post(
+        calculateRateUrl,
+        () =>
+          HttpResponse.json(
+            {
+              error: {
+                code: 'INTERNAL_ERROR',
+                message: 'Something went wrong. Please try again.',
+              },
+            },
+            { status: 500 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = await renderForm();
+
+    await fillValidForm(user);
+    await submit(user);
+
+    const failure = await screen.findByRole('alert', {
+      name: /could not load the repayment schedule/i,
+    });
+
+    expect(
+      screen.getByRole('status', { name: /you are likely eligible/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Your estimate' }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(failure).getByRole('button', { name: 'Try again' }),
+    );
+
+    expect(await screen.findByRole('table')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('alert', { name: /could not load/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('puts server field errors on the fields and in the summary', async () => {

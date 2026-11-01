@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { EligibilityResponse } from '@/api';
 import { Alert } from '@/components/Alert/Alert';
 import {
@@ -14,11 +15,14 @@ export type EligibilityResultProps = {
   response: EligibilityResponse;
   /** The repayment period the user asked for, in months. */
   loanTerm: number;
+  /** Extra cards shown after the affordability breakdown. */
+  children?: ReactNode;
 };
 
 export function EligibilityResult({
   response,
   loanTerm,
+  children,
 }: EligibilityResultProps) {
   const { eligibilityResult: result, recommendedLoan: loan } = response;
   const hasFigures = loan.recommendedAmount > 0;
@@ -86,6 +90,7 @@ export function EligibilityResult({
         )}
       </div>
       <AffordabilityBreakdown analysis={response.affordabilityAnalysis} />
+      {children}
     </section>
   );
 }
