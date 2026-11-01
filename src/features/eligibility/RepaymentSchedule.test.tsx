@@ -145,4 +145,30 @@ describe('RepaymentSchedule', () => {
     expect(screen.getAllByRole('row')).toHaveLength(1 + INITIAL_SCHEDULE_ROWS);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
+
+  it('marks the table busy while a newer schedule loads, keeping the old one', () => {
+    const { rerender } = render(
+      <RepaymentSchedule
+        status="ready"
+        schedule={scheduleOf(24)}
+        loanAmount={150_000}
+      />,
+    );
+
+    expect(screen.getByRole('table').closest('[aria-busy]')).toBeNull();
+
+    rerender(
+      <RepaymentSchedule
+        status="ready"
+        schedule={scheduleOf(24)}
+        loanAmount={150_000}
+        updating
+      />,
+    );
+
+    expect(screen.getByRole('table').closest('[aria-busy]')).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+  });
 });

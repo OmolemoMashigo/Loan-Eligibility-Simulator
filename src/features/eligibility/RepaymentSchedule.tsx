@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import type { CalculateRateResponse } from '@/api';
 import { Alert } from '@/components/Alert/Alert';
 import { LoadingBlock } from '@/components/LoadingBlock/LoadingBlock';
+import { cx } from '@/components/cx';
 import { formatWholeRand } from '@/lib/format';
 import resultStyles from './EligibilityResult.module.css';
 import styles from './RepaymentSchedule.module.css';
@@ -19,11 +20,18 @@ export type RepaymentScheduleProps =
       schedule: readonly ScheduleRow[];
       /** The amount the schedule repays, for the table caption. */
       loanAmount: number;
+      /** A newer schedule is loading; this one is the last good one. */
+      updating?: boolean;
     };
 
 export function RepaymentSchedule(props: RepaymentScheduleProps) {
+  const updating = props.status === 'ready' && props.updating === true;
+
   return (
-    <div className={resultStyles.figures}>
+    <div
+      className={cx(resultStyles.figures, updating && styles.updating)}
+      aria-busy={updating || undefined}
+    >
       <h2 className={resultStyles.heading}>Repayment schedule</h2>
       {props.status === 'loading' ? (
         <LoadingBlock label="Loading your repayment schedule" />

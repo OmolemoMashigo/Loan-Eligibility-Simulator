@@ -2,12 +2,13 @@ import { useFormContext } from 'react-hook-form';
 import { CurrencyField } from '@/components/CurrencyField/CurrencyField';
 import { NumberField } from '@/components/NumberField/NumberField';
 import { SelectField } from '@/components/SelectField/SelectField';
-import { formatMonthDuration, formatWholeRand } from '@/lib/format';
+import { formatMonthDuration } from '@/lib/format';
 import styles from './EligibilityForm.module.css';
 import { parseNumericInput } from './buildFormSchema';
 import type { FormFieldMeta } from './buildFormSchema';
 import type { EligibilityFormValues } from './formDefaults';
 import { loanPurposeOptions } from './labels';
+import { loanAmountHint, loanTermHint } from './loanHints';
 
 export type LoanDetailsSectionProps = {
   meta: FormFieldMeta;
@@ -30,14 +31,8 @@ export function LoanDetailsSection({
     parsedTerm !== undefined && Number.isInteger(parsedTerm) && parsedTerm > 0
       ? formatMonthDuration(parsedTerm)
       : undefined;
-  const amountHint =
-    requestedAmount.min !== undefined && requestedAmount.max !== undefined
-      ? `Between ${formatWholeRand(requestedAmount.min)} and ${formatWholeRand(requestedAmount.max)}`
-      : undefined;
-  const termHint =
-    loanTerm.min !== undefined && loanTerm.max !== undefined
-      ? `In months, between ${loanTerm.min} and ${loanTerm.max}`
-      : 'In months';
+  const amountHint = loanAmountHint(requestedAmount);
+  const termHint = loanTermHint(loanTerm);
 
   return (
     <section className={styles.section} aria-labelledby="loan-details-heading">

@@ -15,6 +15,10 @@ export type EligibilityResultProps = {
   response: EligibilityResponse;
   /** The repayment period the user asked for, in months. */
   loanTerm: number;
+  /** A card shown straight after the estimate, for changing the loan. */
+  adjust?: ReactNode;
+  /** A newer result is loading; this one is the last good one. */
+  updating?: boolean;
   /** Extra cards shown after the affordability breakdown. */
   children?: ReactNode;
 };
@@ -22,13 +26,19 @@ export type EligibilityResultProps = {
 export function EligibilityResult({
   response,
   loanTerm,
+  adjust,
+  updating = false,
   children,
 }: EligibilityResultProps) {
   const { eligibilityResult: result, recommendedLoan: loan } = response;
   const hasFigures = loan.recommendedAmount > 0;
 
   return (
-    <section className={styles.result} aria-label="Eligibility result">
+    <section
+      className={styles.result}
+      aria-label="Eligibility result"
+      aria-busy={updating || undefined}
+    >
       <Alert
         ref={focusOnMount}
         tone={result.isEligible ? 'success' : 'warning'}
@@ -89,6 +99,7 @@ export function EligibilityResult({
           </p>
         )}
       </div>
+      {adjust}
       <AffordabilityBreakdown analysis={response.affordabilityAnalysis} />
       {children}
     </section>

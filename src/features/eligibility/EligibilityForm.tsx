@@ -8,7 +8,6 @@ import {
 } from 'react-hook-form';
 import {
   isApiError,
-  useCalculateRate,
   useCheckEligibility,
   useLoanProducts,
   useValidationRules,
@@ -43,7 +42,13 @@ import {
 } from './loanProduct';
 import { PersonalDetailsSection } from './PersonalDetailsSection';
 import { buildScheduleRequest } from './scheduleRequest';
-import { RepaymentSchedule } from './RepaymentSchedule';
+import { ScheduleSection } from './ScheduleSection';
+import { WhatIfCard } from './WhatIfCard';
+
+type ShownResult = {
+  request: EligibilityRequest;
+  response: EligibilityResponse;
+};
 
 export function EligibilityForm() {
   const rulesQuery = useValidationRules();
@@ -113,7 +118,12 @@ function EligibilityFormFields({
     shouldFocusError: false,
   });
   const checkEligibility = useCheckEligibility();
-  const calculateRate = useCalculateRate();
+  // A second mutation, so a what-if recalculation never clears the result.
+  const recalculate = useCheckEligibility();
+  // The result on screen: the last good one, even while a newer one loads.
+  const [shown, setShown] = useState<ShownResult>();
+  // Bumped on every new submit, so a late what-if answer can be ignored.
+  const generation = useRef(0);
   const formRef = useRef<HTMLFormElement>(null);
   const [summary, setSummary] = useState<ErrorSummaryItem[]>();
   // New key = new alert node = focus moves to the latest message.
@@ -143,70 +153,30 @@ function EligibilityFormFields({
     showFeedback();
   }
 
-  function loadSchedule(
-    request: EligibilityRequest,
-    response: EligibilityResponse,
-  ) {
-    const scheduleRequest = buildScheduleRequest(
-      request,
-      response.recommendedLoan.recommendedAmount,
-    );
-
-    if (scheduleRequest) {
-      calculateRate.mutate(scheduleRequest);
-    }
-  }
-
-  function scheduleCard(
-    request: EligibilityRequest,
-    response: EligibilityResponse,
-  ) {
-    if (
-      !buildScheduleRequest(request, response.recommendedLoan.recommendedAmount)
-    ) {
-      return null;
-    }
-
-    if (calculateRate.isError) {
-      return (
-        <RepaymentSchedule
-          status="error"
-          message={
-            isApiError(calculateRate.error)
-              ? calculateRate.error.message
-              : 'Please try again.'
-          }
-          onRetry={() => {
-            if (calculateRate.variables) {
-              calculateRate.mutate(calculateRate.variables);
-            }
-          }}
-        />
-      );
-    }
-
-    if (calculateRate.isSuccess) {
-      return (
-        <RepaymentSchedule
-          status="ready"
-          schedule={calculateRate.data.paymentSchedule}
-          loanAmount={calculateRate.variables.loanAmount}
-        />
-      );
-    }
-
-    return <RepaymentSchedule status="loading" />;
-  }
-
   function send(request: EligibilityRequest) {
     setSummary(undefined);
-    calculateRate.reset();
+    setShown(undefined);
+    generation.current += 1;
+    recalculate.reset();
     checkEligibility.mutate(request, {
       onSuccess: (response) => {
+        setShown({ request, response });
         showFeedback();
-        loadSchedule(request, response);
       },
       onError: handleSubmitError,
+    });
+  }
+
+  // No showFeedback here: a refresh must not pull focus off the fields.
+  function recalculateWith(request: EligibilityRequest) {
+    const run = generation.current;
+
+    recalculate.mutate(request, {
+      onSuccess: (response) => {
+        if (run === generation.current) {
+          setShown({ request, response });
+        }
+      },
     });
   }
 
@@ -220,6 +190,12 @@ function EligibilityFormFields({
   }
 
   const failed = checkEligibility.isError && !summary;
+  const scheduleRequest = shown
+    ? buildScheduleRequest(
+        shown.request,
+        shown.response.recommendedLoan.recommendedAmount,
+      )
+    : undefined;
 
   return (
     <FormProvider {...form}>
@@ -299,13 +275,37 @@ function EligibilityFormFields({
             </button>
           </Alert>
         ) : null}
-        {checkEligibility.isSuccess && !summary ? (
+        {shown && !summary ? (
           <EligibilityResult
             key={feedbackKey}
-            response={checkEligibility.data}
-            loanTerm={checkEligibility.variables.loanDetails.loanTerm}
+            response={shown.response}
+            loanTerm={shown.request.loanDetails.loanTerm}
+            updating={recalculate.isPending}
+            adjust={
+              <WhatIfCard
+                schema={schema}
+                rules={meta.loanDetails}
+                request={shown.request}
+                updating={recalculate.isPending}
+                failure={
+                  recalculate.isError
+                    ? isApiError(recalculate.error)
+                      ? recalculate.error.message
+                      : 'Please try again.'
+                    : undefined
+                }
+                onRecalculate={recalculateWith}
+                onRetry={() => {
+                  if (recalculate.variables) {
+                    recalculateWith(recalculate.variables);
+                  }
+                }}
+              />
+            }
           >
-            {scheduleCard(checkEligibility.variables, checkEligibility.data)}
+            {scheduleRequest ? (
+              <ScheduleSection request={scheduleRequest} />
+            ) : null}
           </EligibilityResult>
         ) : null}
       </form>

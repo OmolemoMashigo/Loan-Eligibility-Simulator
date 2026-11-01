@@ -178,4 +178,34 @@ describe('EligibilityResult', () => {
       screen.getByRole('region', { name: 'Eligibility result' }),
     ).toBeInTheDocument();
   });
+
+  it('shows the adjust card straight after the estimate and marks the result busy while updating', () => {
+    const { rerender } = render(
+      <EligibilityResult
+        response={eligible}
+        loanTerm={24}
+        adjust={<p>Adjust card</p>}
+      />,
+    );
+
+    const region = screen.getByRole('region', { name: 'Eligibility result' });
+    const estimate = screen.getByRole('heading', {
+      level: 2,
+      name: 'Your estimate',
+    }).parentElement as HTMLElement;
+
+    expect(estimate.nextElementSibling).toHaveTextContent('Adjust card');
+    expect(region).not.toHaveAttribute('aria-busy');
+
+    rerender(
+      <EligibilityResult
+        response={eligible}
+        loanTerm={24}
+        adjust={<p>Adjust card</p>}
+        updating
+      />,
+    );
+
+    expect(region).toHaveAttribute('aria-busy', 'true');
+  });
 });

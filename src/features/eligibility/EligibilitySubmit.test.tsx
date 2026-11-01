@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -404,6 +404,331 @@ describe('EligibilityForm submit', () => {
     expect(
       screen.queryByRole('alert', { name: /could not load/i }),
     ).not.toBeInTheDocument();
+  });
+
+  describe('what-if', () => {
+    const whatIfAmount = () =>
+      screen.getByRole('textbox', { name: /^Loan amount/ });
+    const whatIfTerm = () =>
+      screen.getByRole('textbox', { name: /^Repayment period \(months\)/ });
+
+    /** Fills the spec sample, submits, and waits for the first result. */
+    async function firstResult(user: UserEvent): Promise<void> {
+      await fillValidForm(user);
+      await submit(user);
+      await screen.findByRole('status', { name: /you are likely eligible/i });
+    }
+
+    it('recalculates for a new amount, refreshes the schedule, and leaves focus alone', async () => {
+      const eligibilityRequests: unknown[] = [];
+      const scheduleRequests: unknown[] = [];
+
+      server.use(
+        http.post(eligibilityUrl, async ({ request }) => {
+          eligibilityRequests.push(await request.clone().json());
+        }),
+        http.post(calculateRateUrl, async ({ request }) => {
+          scheduleRequests.push(await request.clone().json());
+        }),
+      );
+      const user = await renderForm();
+
+      await firstResult(user);
+      await screen.findByRole('table');
+
+      await user.clear(whatIfAmount());
+      await user.type(whatIfAmount(), '40000');
+
+      expect(
+        await screen.findByRole(
+          'table',
+          { name: /monthly payments on r\s40\s000 over 24 months/i },
+          { timeout: 3000 },
+        ),
+      ).toBeInTheDocument();
+      expect(whatIfAmount()).toHaveFocus();
+      expect(eligibilityRequests).toHaveLength(2);
+      expect(eligibilityRequests[1]).toEqual({
+        ...SPEC_SAMPLE_REQUEST,
+        loanDetails: {
+          ...SPEC_SAMPLE_REQUEST.loanDetails,
+          requestedAmount: 40_000,
+        },
+      });
+      expect(scheduleRequests).toEqual([
+        {
+          loanAmount: 150_000,
+          loanTerm: 24,
+          loanType: 'personal_loan',
+          creditScore: 650,
+        },
+        {
+          loanAmount: 40_000,
+          loanTerm: 24,
+          loanType: 'personal_loan',
+          creditScore: 650,
+        },
+      ]);
+      expect(
+        screen.getByText('Recommended amount').nextSibling?.textContent,
+      ).toMatch(/^R\s40\s000$/);
+    });
+
+    it('recalculates for a new repayment period', async () => {
+      const eligibilityRequests: unknown[] = [];
+
+      server.use(
+        http.post(eligibilityUrl, async ({ request }) => {
+          eligibilityRequests.push(await request.clone().json());
+        }),
+      );
+      const user = await renderForm();
+
+      await firstResult(user);
+      await user.clear(whatIfTerm());
+      await user.type(whatIfTerm(), '36');
+
+      expect(
+        await screen.findByRole(
+          'table',
+          { name: /over 36 months/i },
+          { timeout: 3000 },
+        ),
+      ).toBeInTheDocument();
+      expect(
+        within(
+          screen.getByRole('region', { name: 'Eligibility result' }),
+        ).getByText('Repayment period').nextSibling,
+      ).toHaveTextContent('36 months');
+      expect(eligibilityRequests[1]).toEqual({
+        ...SPEC_SAMPLE_REQUEST,
+        loanDetails: { ...SPEC_SAMPLE_REQUEST.loanDetails, loanTerm: 36 },
+      });
+    });
+
+    it('keeps the last result on screen, marked as busy, while the new one loads', async () => {
+      let release: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let calls = 0;
+
+      server.use(
+        http.post(eligibilityUrl, async () => {
+          calls += 1;
+
+          if (calls > 1) {
+            await gate;
+          }
+        }),
+      );
+      const user = await renderForm();
+
+      await firstResult(user);
+
+      const before =
+        screen.getByText('Monthly repayment').nextSibling?.textContent;
+      const region = screen.getByRole('region', { name: 'Eligibility result' });
+
+      await user.clear(whatIfAmount());
+      await user.type(whatIfAmount(), '40000');
+
+      expect(
+        await screen.findByText(
+          'Updating your results…',
+          {},
+          { timeout: 3000 },
+        ),
+      ).toBeInTheDocument();
+      expect(region).toHaveAttribute('aria-busy', 'true');
+      expect(
+        screen.getByRole('status', { name: /you are likely eligible/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Monthly repayment').nextSibling?.textContent,
+      ).toBe(before);
+
+      release();
+
+      await waitFor(() => {
+        expect(region).not.toHaveAttribute('aria-busy');
+      });
+      expect(
+        screen.getByText('Monthly repayment').nextSibling?.textContent,
+      ).not.toBe(before);
+      expect(
+        screen.queryByText('Updating your results…'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('can change the decision when the new amount is too much', async () => {
+      const user = await renderForm();
+
+      await fillValidForm(user);
+      await user.clear(
+        screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
+      );
+      await user.type(
+        screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
+        '20000',
+      );
+      await submit(user);
+      await screen.findByRole('status', { name: /you are likely eligible/i });
+
+      await user.clear(whatIfAmount());
+      await user.type(whatIfAmount(), '300000');
+
+      expect(
+        await screen.findByRole(
+          'status',
+          { name: /unlikely to be eligible/i },
+          { timeout: 3000 },
+        ),
+      ).toBeInTheDocument();
+      expect(whatIfAmount()).toHaveFocus();
+    });
+
+    it('sends nothing for an invalid amount and shows the rule message', async () => {
+      const requests = recordRequests();
+      const user = await renderForm();
+
+      await firstResult(user);
+      await user.clear(whatIfAmount());
+      await user.type(whatIfAmount(), '1000');
+
+      expect(
+        await screen.findByText(
+          'Loan amount must be between R5,000 and R300,000',
+          {},
+          { timeout: 3000 },
+        ),
+      ).toBeInTheDocument();
+      expect(whatIfAmount()).toBeInvalid();
+      expect(requests).toHaveLength(1);
+    });
+
+    it('keeps the result, says the update failed, and updates on try again', async () => {
+      let calls = 0;
+
+      server.use(
+        http.post(eligibilityUrl, () => {
+          calls += 1;
+
+          if (calls === 2) {
+            return HttpResponse.json(
+              {
+                error: {
+                  code: 'INTERNAL_ERROR',
+                  message: 'Something went wrong. Please try again.',
+                },
+              },
+              { status: 500 },
+            );
+          }
+        }),
+      );
+      const user = await renderForm();
+
+      await firstResult(user);
+      await user.clear(whatIfAmount());
+      await user.type(whatIfAmount(), '40000');
+
+      const failure = await screen.findByRole(
+        'alert',
+        { name: /we could not update your results/i },
+        { timeout: 3000 },
+      );
+
+      expect(failure).toHaveTextContent(
+        'Something went wrong. Please try again.',
+      );
+      expect(
+        screen.getByRole('status', { name: /you are likely eligible/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Recommended amount').nextSibling?.textContent,
+      ).toMatch(/^R\s150\s000$/);
+
+      await user.click(
+        within(failure).getByRole('button', { name: 'Try again' }),
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Recommended amount').nextSibling?.textContent,
+        ).toMatch(/^R\s40\s000$/);
+      });
+      expect(
+        screen.queryByRole('alert', { name: /could not update/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('starts the fields over from the new request after the main form is resubmitted', async () => {
+      const user = await renderForm();
+
+      await firstResult(user);
+      await user.clear(whatIfAmount());
+      await user.type(whatIfAmount(), '40000');
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText('Recommended amount').nextSibling?.textContent,
+          ).toMatch(/^R\s40\s000$/);
+        },
+        { timeout: 3000 },
+      );
+
+      await submit(user);
+
+      await waitFor(() => {
+        expect(whatIfAmount()).toHaveValue('150000');
+      });
+      expect(whatIfTerm()).toHaveValue('24');
+    });
+
+    it('ignores a late what-if answer after the main form is resubmitted', async () => {
+      let release: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let calls = 0;
+
+      server.use(
+        http.post(eligibilityUrl, async () => {
+          calls += 1;
+
+          if (calls === 2) {
+            await gate;
+          }
+        }),
+      );
+      const user = await renderForm();
+
+      await firstResult(user);
+      await user.clear(whatIfAmount());
+      await user.type(whatIfAmount(), '40000');
+      await screen.findByText('Updating your results…', {}, { timeout: 3000 });
+
+      const expenses = screen.getByRole('textbox', {
+        name: 'Monthly expenses',
+      });
+
+      await user.clear(expenses);
+      await user.type(expenses, '24000');
+      await submit(user);
+      await screen.findByRole('status', { name: /unlikely to be eligible/i });
+
+      release();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(
+        screen.getByRole('status', { name: /unlikely to be eligible/i }),
+      ).toBeInTheDocument();
+      expect(whatIfAmount()).toHaveValue('150000');
+      expect(
+        screen.queryByText('Updating your results…'),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it('puts server field errors on the fields and in the summary', async () => {
