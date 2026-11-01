@@ -21,6 +21,7 @@ import {
   buildFormFieldMeta,
   type EligibilityFormRules,
 } from './buildFormSchema';
+import { DeclineNextSteps } from './DeclineNextSteps';
 import styles from './EligibilityForm.module.css';
 import { EligibilityResult } from './EligibilityResult';
 import {
@@ -281,6 +282,22 @@ function EligibilityFormFields({
             response={shown.response}
             loanTerm={shown.request.loanDetails.loanTerm}
             updating={recalculate.isPending}
+            nextSteps={
+              shown.response.eligibilityResult.isEligible ? undefined : (
+                <DeclineNextSteps
+                  maxAmount={shown.response.recommendedLoan.maxAmount}
+                  requestedAmount={shown.request.loanDetails.requestedAmount}
+                  loanTerm={shown.request.loanDetails.loanTerm}
+                  maxTerm={meta.loanDetails.loanTerm.max}
+                  disposableIncome={
+                    shown.response.affordabilityAnalysis.disposableIncome
+                  }
+                  onEditDetails={() => {
+                    focusField('personalInfo.age');
+                  }}
+                />
+              )
+            }
             adjust={
               <WhatIfCard
                 schema={schema}

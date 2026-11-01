@@ -2,6 +2,7 @@ import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { formatWholeRand } from '@/lib/format';
 import { apiMatch } from '@/mocks/api';
 import { SPEC_SAMPLE_REQUEST, evaluateEligibility } from '@/mocks/engine';
 import { setMockLatency } from '@/mocks/latency';
@@ -404,6 +405,116 @@ describe('EligibilityForm submit', () => {
     expect(
       screen.queryByRole('alert', { name: /could not load/i }),
     ).not.toBeInTheDocument();
+  });
+
+  describe('next steps after a decline', () => {
+    async function declineWithExpenses(user: UserEvent, expenses: string) {
+      await fillValidForm(user);
+
+      const field = screen.getByRole('textbox', { name: 'Monthly expenses' });
+
+      await user.clear(field);
+      await user.type(field, expenses);
+      await submit(user);
+      await screen.findByRole('status', { name: /unlikely to be eligible/i });
+    }
+
+    it('suggests the affordable amount and a longer period, and takes the user back to their details', async () => {
+      const maxAmount = evaluateEligibility({
+        ...SPEC_SAMPLE_REQUEST,
+        financialInfo: {
+          ...SPEC_SAMPLE_REQUEST.financialInfo,
+          monthlyExpenses: 24_000,
+        },
+      }).recommendedLoan.maxAmount;
+      const user = await renderForm();
+
+      await declineWithExpenses(user, '24000');
+
+      const card = screen.getByRole('heading', {
+        level: 2,
+        name: 'What you can try',
+      }).parentElement as HTMLElement;
+      const [amount, term] = within(card).getAllByRole('listitem');
+
+      expect(maxAmount).toBeGreaterThan(0);
+      expect(amount?.textContent).toBe(
+        `Borrow ${formatWholeRand(maxAmount)} or less. That is the most that fits your budget over 24 months.`,
+      );
+      expect(term).toHaveTextContent('up to 60 months');
+
+      // The result is still on screen and the form still holds the user's answers.
+      await user.click(
+        within(card).getByRole('button', { name: 'Edit details' }),
+      );
+
+      const age = screen.getByRole('textbox', { name: 'Age' });
+
+      expect(age).toHaveFocus();
+      expect(age).toHaveValue('35');
+      expect(
+        screen.getByRole('textbox', { name: 'Monthly expenses' }),
+      ).toHaveValue('24000');
+    });
+
+    it('follows the what-if amount and period it was last given', async () => {
+      const user = await renderForm();
+
+      await declineWithExpenses(user, '24000');
+
+      const period = screen.getByRole('textbox', {
+        name: /^Repayment period \(months\)/,
+      });
+
+      await user.clear(period);
+      await user.type(period, '60');
+
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText(/most that fits your budget over 60 months/i),
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
+      expect(
+        screen.queryByText(/choose a longer repayment period/i),
+      ).not.toBeInTheDocument();
+    });
+
+    it('makes no suggestions when expenses leave no income, but still offers to edit', async () => {
+      const user = await renderForm();
+
+      await declineWithExpenses(user, '25000');
+
+      const card = screen.getByRole('heading', {
+        level: 2,
+        name: 'What you can try',
+      }).parentElement as HTMLElement;
+
+      expect(within(card).queryByRole('list')).not.toBeInTheDocument();
+      expect(card).toHaveTextContent(
+        /expenses leave no income to repay a loan/i,
+      );
+      expect(
+        within(card).getByRole('button', { name: 'Edit details' }),
+      ).toBeInTheDocument();
+    });
+
+    it('is not shown for an eligible result', async () => {
+      const user = await renderForm();
+
+      await fillValidForm(user);
+      await submit(user);
+      await screen.findByRole('status', { name: /you are likely eligible/i });
+
+      expect(
+        screen.queryByRole('heading', { name: 'What you can try' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Edit details' }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   describe('what-if', () => {

@@ -208,4 +208,25 @@ describe('EligibilityResult', () => {
 
     expect(region).toHaveAttribute('aria-busy', 'true');
   });
+
+  it('shows the next-steps card between the estimate and the adjust card', () => {
+    render(
+      <EligibilityResult
+        response={declinedWithAnOption}
+        loanTerm={24}
+        nextSteps={<p>Next steps card</p>}
+        adjust={<p>Adjust card</p>}
+      />,
+    );
+
+    const estimate = screen.getByRole('heading', {
+      level: 2,
+      name: 'What would fit your budget',
+    }).parentElement as HTMLElement;
+
+    expect(estimate.nextElementSibling).toHaveTextContent('Next steps card');
+    expect(estimate.nextElementSibling?.nextElementSibling).toHaveTextContent(
+      'Adjust card',
+    );
+  });
 });

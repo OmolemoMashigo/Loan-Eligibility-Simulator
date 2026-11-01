@@ -15,7 +15,9 @@ export type EligibilityResultProps = {
   response: EligibilityResponse;
   /** The repayment period the user asked for, in months. */
   loanTerm: number;
-  /** A card shown straight after the estimate, for changing the loan. */
+  /** A card shown straight after the estimate, with what to try next. */
+  nextSteps?: ReactNode;
+  /** A card shown after the next steps, for changing the loan. */
   adjust?: ReactNode;
   /** A newer result is loading; this one is the last good one. */
   updating?: boolean;
@@ -26,6 +28,7 @@ export type EligibilityResultProps = {
 export function EligibilityResult({
   response,
   loanTerm,
+  nextSteps,
   adjust,
   updating = false,
   children,
@@ -99,6 +102,7 @@ export function EligibilityResult({
           </p>
         )}
       </div>
+      {nextSteps}
       {adjust}
       <AffordabilityBreakdown analysis={response.affordabilityAnalysis} />
       {children}
