@@ -23,6 +23,7 @@ export type RadioGroupProps = {
   value?: string;
   defaultValue?: string;
   onChange?: ComponentProps<'input'>['onChange'];
+  onBlur?: ComponentProps<'input'>['onBlur'];
 };
 
 export function RadioGroup({
@@ -36,6 +37,7 @@ export function RadioGroup({
   value,
   defaultValue,
   onChange,
+  onBlur,
 }: RadioGroupProps) {
   const describedBy = describedById(name, { hint, error });
 
@@ -84,6 +86,7 @@ export function RadioGroup({
                 value={option.value}
                 required={required}
                 onChange={onChange}
+                onBlur={onBlur}
                 {...checkedProps}
               />
               {option.label}
