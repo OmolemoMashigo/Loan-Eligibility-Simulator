@@ -1,3 +1,5 @@
+@import './styles/tokens.css';
+
 *,
 *::before,
 *::after {
@@ -6,13 +8,20 @@
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--space-1);
 }
 
 #root {
   min-height: 100vh;
+  border-top: var(--space-1) solid var(--color-brand);
 }

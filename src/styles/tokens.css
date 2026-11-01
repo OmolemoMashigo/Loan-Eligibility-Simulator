@@ -1,0 +1,89 @@
+:root {
+  color-scheme: light;
+
+  /* Colour — original calm banking palette. Not Capitec brand. */
+  --color-bg: #f4f1ea;
+  --color-surface: #ffffff;
+  --color-surface-muted: #ebe6dc;
+  --color-border: #d4cfc4;
+
+  --color-text: #1c2430;
+  --color-text-muted: #5c6570;
+  --color-text-on-brand: #ffffff;
+
+  --color-brand: #0f5c56;
+  --color-brand-hover: #0a4a45;
+  --color-brand-subtle: #e4f1ef;
+
+  --color-success: #1b6b4a;
+  --color-success-subtle: #e5f4ec;
+  --color-danger: #9b2c2c;
+  --color-danger-subtle: #f8e6e6;
+  --color-warning: #8a5a12;
+  --color-warning-subtle: #f8eedb;
+  --color-info: #2c5282;
+  --color-info-subtle: #e7eef6;
+
+  --color-focus: var(--color-brand);
+
+  /* Type */
+  --font-sans:
+    'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', arial, sans-serif;
+  --font-numeric: tabular-nums;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 1.875rem;
+
+  --line-height-tight: 1.25;
+  --line-height-body: 1.5;
+  --line-height-loose: 1.6;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Spacing — 4px base. Breakpoints: 320 / 768 / 1024. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --touch-min: 2.75rem;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  --focus-ring-width: 0.125rem;
+  --focus-ring: var(--focus-ring-width) solid var(--color-focus);
+
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
