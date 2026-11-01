@@ -122,10 +122,13 @@ describe('EligibilityForm submit', () => {
     await submit(user);
 
     const done = await screen.findByRole('status', {
-      name: /eligibility check complete/i,
+      name: /you are likely eligible for this loan/i,
     });
 
     expect(done).toHaveFocus();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Your estimate' }),
+    ).toBeInTheDocument();
     expect(requests).toEqual([SPEC_SAMPLE_REQUEST]);
     expect(
       screen.getByRole('button', { name: 'Check my eligibility' }),
@@ -143,7 +146,7 @@ describe('EligibilityForm submit', () => {
     await user.click(screen.getByRole('radio', { name: 'Unemployed' }));
     await submit(user);
 
-    await screen.findByRole('status', { name: /eligibility check complete/i });
+    await screen.findByRole('status', { name: /likely eligible/i });
 
     expect(requests).toEqual([
       {
@@ -193,9 +196,57 @@ describe('EligibilityForm submit', () => {
     await user.click(pending);
     release();
 
-    await screen.findByRole('status', { name: /eligibility check complete/i });
+    await screen.findByRole('status', { name: /likely eligible/i });
 
     expect(calls).toBe(1);
+  });
+
+  it('shows a decline from the engine with its reason and what would fit', async () => {
+    const user = await renderForm();
+
+    await fillValidForm(user);
+    const expenses = screen.getByRole('textbox', { name: 'Monthly expenses' });
+    await user.clear(expenses);
+    await user.type(expenses, '24000');
+    await submit(user);
+
+    const banner = await screen.findByRole('status', {
+      name: /unlikely to be eligible for this loan as requested/i,
+    });
+
+    expect(banner).toHaveFocus();
+    expect(banner).toHaveTextContent(
+      'The monthly repayment would take more than 85% of your disposable income',
+    );
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: 'What would fit your budget',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('replaces the result with a new one after changing the details', async () => {
+    const user = await renderForm();
+
+    await fillValidForm(user);
+    await submit(user);
+    await screen.findByRole('status', { name: /you are likely eligible/i });
+
+    const expenses = screen.getByRole('textbox', { name: 'Monthly expenses' });
+    await user.clear(expenses);
+    await user.type(expenses, '24000');
+    await submit(user);
+
+    expect(
+      await screen.findByRole('status', { name: /unlikely to be eligible/i }),
+    ).toHaveFocus();
+    expect(
+      screen.queryByRole('status', { name: /you are likely eligible/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole('region', { name: 'Eligibility result' }),
+    ).toHaveLength(1);
   });
 
   it('puts server field errors on the fields and in the summary', async () => {
@@ -266,9 +317,7 @@ describe('EligibilityForm submit', () => {
     );
 
     expect(
-      await screen.findByRole('status', {
-        name: /eligibility check complete/i,
-      }),
+      await screen.findByRole('status', { name: /likely eligible/i }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('alert', { name: /could not check/i }),

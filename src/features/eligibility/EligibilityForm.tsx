@@ -21,6 +21,7 @@ import {
   type EligibilityFormRules,
 } from './buildFormSchema';
 import styles from './EligibilityForm.module.css';
+import { EligibilityResult } from './EligibilityResult';
 import {
   summariseFieldMessages,
   summariseFormErrors,
@@ -235,11 +236,10 @@ function EligibilityFormFields({
           </Alert>
         ) : null}
         {checkEligibility.isSuccess && !summary ? (
-          <Alert
+          <EligibilityResult
             key={feedbackKey}
-            ref={focusOnMount}
-            tone="success"
-            title="Eligibility check complete"
+            response={checkEligibility.data}
+            loanTerm={checkEligibility.variables.loanDetails.loanTerm}
           />
         ) : null}
       </form>
