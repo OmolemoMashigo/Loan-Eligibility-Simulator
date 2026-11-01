@@ -1,4 +1,4 @@
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -218,6 +218,138 @@ describe('EligibilityForm', () => {
       await screen.findByText(
         VALIDATION_RULES_RESPONSE.financialInfo.creditScore.errorMessage,
       ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the personal loan product with bounds and purposes from the API (SI-1)', async () => {
+    await renderForm();
+
+    expect(
+      screen.getByRole('heading', { name: 'Loan details' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Personal Loan')).toBeInTheDocument();
+    expect(screen.queryByText('Vehicle Finance')).not.toBeInTheDocument();
+
+    const amount = screen.getByRole('textbox', {
+      name: 'Amount you want to borrow',
+    });
+    expect(amount).toBeRequired();
+    expect(amount).toHaveAttribute('inputmode', 'decimal');
+    expect(amount).toHaveAttribute('autocomplete', 'off');
+    expect(amount).toHaveAccessibleDescription(
+      /between r\s5\s000 and r\s300\s000/i,
+    );
+
+    expect(
+      screen.getByRole('textbox', { name: 'Repayment period' }),
+    ).toHaveAccessibleDescription(/in months, between 6 and 60/i);
+
+    const purpose = screen.getByRole('combobox', {
+      name: 'What is the loan for?',
+    });
+    const purposeNames = within(purpose)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
+
+    expect(purposeNames).toEqual([
+      'Select a purpose',
+      'Debt consolidation',
+      'Home improvement',
+      'Education',
+      'Medical expenses',
+      'Other',
+    ]);
+  });
+
+  it('echoes the repayment period in years and lets the user pick a purpose', async () => {
+    const user = userEvent.setup();
+    await renderForm();
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Repayment period' }),
+      '24',
+    );
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'What is the loan for?' }),
+      'home_improvement',
+    );
+
+    expect(screen.getByText('24 months = 2 years')).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'What is the loan for?' }),
+    ).toHaveValue('home_improvement');
+  });
+
+  it('shows the API messages for an out-of-range amount and term', async () => {
+    const user = userEvent.setup();
+    await renderForm();
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
+      '400000',
+    );
+    await user.tab();
+    await user.type(
+      screen.getByRole('textbox', { name: 'Repayment period' }),
+      '72',
+    );
+    await user.tab();
+
+    expect(
+      await screen.findByText(
+        VALIDATION_RULES_RESPONSE.loanDetails.requestedAmount.errorMessage,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        VALIDATION_RULES_RESPONSE.loanDetails.loanTerm.errorMessage,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('asks for a purpose after leaving it empty', async () => {
+    const user = userEvent.setup();
+    await renderForm();
+
+    await user.click(
+      screen.getByRole('combobox', { name: 'What is the loan for?' }),
+    );
+    await user.tab();
+
+    expect(
+      await screen.findByText(
+        FORM_VALIDATION_DEFAULTS.loanPurpose.errorMessage,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('lets the user retry when the products fail to load', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get(apiMatch('/loans/products'), () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'INTERNAL_ERROR',
+              message: 'Something went wrong. Please try again.',
+            },
+          },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    renderWithProviders(<EligibilityForm />);
+
+    expect(
+      await screen.findByRole('alert', { name: /could not load the form/i }),
+    ).toBeInTheDocument();
+
+    server.resetHandlers();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Loan details' }),
     ).toBeInTheDocument();
   });
 

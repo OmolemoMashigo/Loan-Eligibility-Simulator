@@ -125,15 +125,20 @@ export function buildEligibilityFormSchema(
 ) {
   const meta = buildFormFieldMeta(rules, defaults);
 
+  /**
+   * The request type needs age, income, expenses, debt, amount, and term
+   * on every submit, so these are always required here whatever `required`
+   * says. Only duration (SI-3) and credit score (SI-8) may be left out.
+   */
   return z.object({
     personalInfo: z
       .object({
-        age: numericField(meta.personalInfo.age, { integer: true }),
+        age: requiredNumberField(meta.personalInfo.age, { integer: true }),
         employmentStatus: enumField(meta.personalInfo.employmentStatus),
-        employmentDuration: numericField(meta.personalInfo.employmentDuration, {
-          integer: true,
-          treatAsOptional: true,
-        }),
+        employmentDuration: optionalNumberField(
+          meta.personalInfo.employmentDuration,
+          { integer: true },
+        ),
       })
       .transform((value, ctx) => {
         if (!requiresEmploymentDuration(value.employmentStatus)) {
@@ -162,29 +167,31 @@ export function buildEligibilityFormSchema(
       }),
     financialInfo: z
       .object({
-        monthlyIncome: numericField(meta.financialInfo.monthlyIncome),
-        monthlyExpenses: numericField(meta.financialInfo.monthlyExpenses),
-        existingDebt: numericField(meta.financialInfo.existingDebt),
-        creditScore: numericField(meta.financialInfo.creditScore, {
+        monthlyIncome: requiredNumberField(meta.financialInfo.monthlyIncome),
+        monthlyExpenses: requiredNumberField(
+          meta.financialInfo.monthlyExpenses,
+        ),
+        existingDebt: requiredNumberField(meta.financialInfo.existingDebt),
+        creditScore: optionalNumberField(meta.financialInfo.creditScore, {
           integer: true,
         }),
       })
-      .transform((value) => {
-        if (value.creditScore === undefined) {
-          return {
-            monthlyIncome: value.monthlyIncome,
-            monthlyExpenses: value.monthlyExpenses,
-            existingDebt: value.existingDebt,
-          };
-        }
-
-        return value;
-      }),
-    loanDetails: z.object({
-      requestedAmount: numericField(meta.loanDetails.requestedAmount),
-      loanTerm: numericField(meta.loanDetails.loanTerm, { integer: true }),
-      loanPurpose: enumField(meta.loanDetails.loanPurpose),
-    }),
+      .transform(({ creditScore, ...rest }) =>
+        creditScore === undefined ? rest : { ...rest, creditScore },
+      ),
+    loanDetails: z
+      .object({
+        requestedAmount: requiredNumberField(meta.loanDetails.requestedAmount),
+        loanTerm: requiredNumberField(meta.loanDetails.loanTerm, {
+          integer: true,
+        }),
+        loanPurpose: enumField(meta.loanDetails.loanPurpose),
+      })
+      .transform((value) => ({
+        ...value,
+        loanPurpose:
+          value.loanPurpose as EligibilityRequest['loanDetails']['loanPurpose'],
+      })),
   });
 }
 
@@ -204,46 +211,59 @@ export function formFieldErrors(error: {
   return fieldErrors;
 }
 
-function numericField(
-  rule: FormNumericRule,
-  options: { integer?: boolean; treatAsOptional?: boolean } = {},
-) {
-  const required = options.treatAsOptional ? false : rule.required;
+type NumericOptions = { integer?: boolean };
 
-  return rawNumberInput.transform((value, ctx) => {
+/** A number the request always needs. Blank input is an error. */
+function requiredNumberField(
+  rule: FormNumericRule,
+  options: NumericOptions = {},
+) {
+  return rawNumberInput.transform((value, ctx): number => {
     const parsed = parseNumericInput(value);
 
     if (parsed === undefined) {
-      if (!required) {
-        return undefined;
-      }
-
       ctx.addIssue({ code: 'custom', message: rule.errorMessage });
       return z.NEVER;
     }
 
-    if (!Number.isFinite(parsed)) {
-      ctx.addIssue({ code: 'custom', message: rule.errorMessage });
-      return z.NEVER;
-    }
-
-    if (options.integer && !Number.isInteger(parsed)) {
-      ctx.addIssue({ code: 'custom', message: rule.errorMessage });
-      return z.NEVER;
-    }
-
-    if (rule.min !== undefined && parsed < rule.min) {
-      ctx.addIssue({ code: 'custom', message: rule.errorMessage });
-      return z.NEVER;
-    }
-
-    if (rule.max !== undefined && parsed > rule.max) {
-      ctx.addIssue({ code: 'custom', message: rule.errorMessage });
-      return z.NEVER;
-    }
-
-    return parsed;
+    return checkNumberRule(parsed, rule, options, ctx);
   });
+}
+
+/** A number the request may leave out. Blank input becomes undefined. */
+function optionalNumberField(
+  rule: FormNumericRule,
+  options: NumericOptions = {},
+) {
+  return rawNumberInput.transform((value, ctx): number | undefined => {
+    const parsed = parseNumericInput(value);
+
+    if (parsed === undefined) {
+      return undefined;
+    }
+
+    return checkNumberRule(parsed, rule, options, ctx);
+  });
+}
+
+function checkNumberRule(
+  parsed: number,
+  rule: FormNumericRule,
+  options: NumericOptions,
+  ctx: z.RefinementCtx,
+): number {
+  const valid =
+    Number.isFinite(parsed) &&
+    (!options.integer || Number.isInteger(parsed)) &&
+    (rule.min === undefined || parsed >= rule.min) &&
+    (rule.max === undefined || parsed <= rule.max);
+
+  if (!valid) {
+    ctx.addIssue({ code: 'custom', message: rule.errorMessage });
+    return z.NEVER;
+  }
+
+  return parsed;
 }
 
 function enumField(rule: FormEnumRule) {
