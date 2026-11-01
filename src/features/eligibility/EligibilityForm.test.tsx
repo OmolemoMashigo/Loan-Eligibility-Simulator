@@ -4,6 +4,7 @@ import { HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { apiMatch } from '@/mocks/api';
 import { VALIDATION_RULES_RESPONSE } from '@/mocks/engine';
+import { FORM_VALIDATION_DEFAULTS } from './formDefaults';
 import { setMockLatency } from '@/mocks/latency';
 import { server } from '@/mocks/server';
 import { renderWithProviders } from '@/test/renderWithProviders';
@@ -17,7 +18,7 @@ async function renderForm() {
   ).toBeInTheDocument();
 }
 
-describe('EligibilityForm personal details', () => {
+describe('EligibilityForm', () => {
   beforeAll(() => {
     setMockLatency(0);
     server.listen({ onUnhandledRequest: 'error' });
@@ -130,6 +131,93 @@ describe('EligibilityForm personal details', () => {
 
     expect(
       await screen.findByRole('heading', { name: 'Personal details' }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the money fields with rand inputs and an optional credit score', async () => {
+    await renderForm();
+
+    expect(screen.getByRole('heading', { name: 'Money' })).toBeInTheDocument();
+
+    const income = screen.getByRole('textbox', { name: 'Monthly income' });
+    expect(income).toBeRequired();
+    expect(income).toHaveAttribute('inputmode', 'decimal');
+    expect(income).toHaveAttribute('autocomplete', 'off');
+    expect(income).toHaveAccessibleDescription(/at least r\s5\s000 a month/i);
+
+    expect(
+      screen.getByRole('textbox', { name: 'Monthly expenses' }),
+    ).toBeRequired();
+    expect(
+      screen.getByRole('textbox', {
+        name: 'Total existing debt (outstanding balance)',
+      }),
+    ).toBeRequired();
+
+    const creditScore = screen.getByRole('textbox', {
+      name: 'Credit score (optional)',
+    });
+    expect(creditScore).not.toBeRequired();
+    expect(creditScore).toHaveAccessibleDescription(
+      /between 300 and 850\. leave blank/i,
+    );
+  });
+
+  it('accepts a blank credit score and 0 existing debt on blur (SI-8, SI-9)', async () => {
+    const user = userEvent.setup();
+    await renderForm();
+
+    await user.click(
+      screen.getByRole('textbox', { name: 'Credit score (optional)' }),
+    );
+    await user.tab();
+    await user.type(
+      screen.getByRole('textbox', {
+        name: 'Total existing debt (outstanding balance)',
+      }),
+      '0',
+    );
+    await user.tab();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('textbox', { name: 'Credit score (optional)' }),
+      ).toBeValid();
+    });
+    expect(
+      screen.getByRole('textbox', {
+        name: 'Total existing debt (outstanding balance)',
+      }),
+    ).toBeValid();
+    expect(
+      screen.queryByText(FORM_VALIDATION_DEFAULTS.existingDebt.errorMessage),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows the API messages for low income and an out-of-range score', async () => {
+    const user = userEvent.setup();
+    await renderForm();
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Monthly income' }),
+      '4000',
+    );
+    await user.tab();
+    await user.type(
+      screen.getByRole('textbox', { name: 'Credit score (optional)' }),
+      '900',
+    );
+    await user.tab();
+
+    expect(
+      await screen.findByText(
+        VALIDATION_RULES_RESPONSE.financialInfo.monthlyIncome.errorMessage,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        VALIDATION_RULES_RESPONSE.financialInfo.creditScore.errorMessage,
+      ),
     ).toBeInTheDocument();
   });
 

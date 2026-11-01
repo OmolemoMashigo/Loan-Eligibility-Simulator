@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatMonthDuration } from './format';
+import { formatMonthDuration, formatWholeRand } from './format';
+
+describe('formatWholeRand', () => {
+  it('formats rand amounts in en-ZA without cents', () => {
+    expect(formatWholeRand(5_000)).toMatch(/^R\s5\s000$/);
+    expect(formatWholeRand(150_000)).toMatch(/^R\s150\s000$/);
+    expect(formatWholeRand(0)).toMatch(/^R\s0$/);
+  });
+});
 
 describe('formatMonthDuration', () => {
   it('echoes whole years the way the form hint describes', () => {

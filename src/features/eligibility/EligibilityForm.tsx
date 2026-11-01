@@ -9,6 +9,7 @@ import {
   buildFormFieldMeta,
 } from './buildFormSchema';
 import styles from './EligibilityForm.module.css';
+import { FinancialDetailsSection } from './FinancialDetailsSection';
 import { emptyEligibilityFormValues } from './formDefaults';
 import { PersonalDetailsSection } from './PersonalDetailsSection';
 
@@ -60,6 +61,7 @@ function EligibilityFormFields({
     <FormProvider {...form}>
       <form className={styles.form} aria-label="Loan eligibility" noValidate>
         <PersonalDetailsSection meta={meta} />
+        <FinancialDetailsSection meta={meta} />
       </form>
     </FormProvider>
   );
