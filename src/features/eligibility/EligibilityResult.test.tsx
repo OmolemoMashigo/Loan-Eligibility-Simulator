@@ -145,6 +145,32 @@ describe('EligibilityResult', () => {
     );
   });
 
+  it('shows the affordability breakdown for eligible and declined results', () => {
+    const { rerender } = render(
+      <EligibilityResult response={eligible} loanTerm={24} />,
+    );
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Your affordability' }),
+    ).toBeVisible();
+    expect(valueOf('Disposable income')).toMatch(/^R\s10\s000$/);
+    expect(valueOf('Debt-to-income ratio')).toBe('20%');
+    expect(valueOf('Loan-to-income ratio')).toBe('60%');
+    expect(valueOf('Affordability rating')).toBe('Good');
+
+    rerender(
+      <EligibilityResult
+        response={declinedWithNothingAffordable}
+        loanTerm={12}
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Your affordability' }),
+    ).toBeVisible();
+    expect(valueOf('Disposable income')).toMatch(/^R\s10\s000$/);
+  });
+
   it('names the result region for screen readers', () => {
     render(<EligibilityResult response={eligible} loanTerm={24} />);
 

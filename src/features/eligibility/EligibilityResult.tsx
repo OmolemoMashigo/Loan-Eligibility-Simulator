@@ -5,8 +5,10 @@ import {
   formatPercent,
   formatWholeRand,
 } from '@/lib/format';
+import { AffordabilityBreakdown } from './AffordabilityBreakdown';
 import styles from './EligibilityResult.module.css';
 import { riskCategoryLabel } from './labels';
+import { ResultFigure } from './ResultFigure';
 
 export type EligibilityResultProps = {
   response: EligibilityResponse;
@@ -51,27 +53,27 @@ export function EligibilityResult({
         </h2>
         {hasFigures ? (
           <dl className={styles.list}>
-            <Figure
+            <ResultFigure
               label="Recommended amount"
               value={formatWholeRand(loan.recommendedAmount)}
             />
-            <Figure
+            <ResultFigure
               label="Maximum affordable amount"
               value={formatWholeRand(loan.maxAmount)}
             />
-            <Figure
+            <ResultFigure
               label="Interest rate"
               value={`${formatPercent(loan.interestRate)} a year`}
             />
-            <Figure
+            <ResultFigure
               label="Repayment period"
               value={formatMonthDuration(loanTerm)}
             />
-            <Figure
+            <ResultFigure
               label="Monthly repayment"
               value={formatWholeRand(loan.monthlyPayment)}
             />
-            <Figure
+            <ResultFigure
               label="Total repayment"
               value={formatWholeRand(loan.totalRepayment)}
             />
@@ -83,16 +85,8 @@ export function EligibilityResult({
           </p>
         )}
       </div>
+      <AffordabilityBreakdown analysis={response.affordabilityAnalysis} />
     </section>
-  );
-}
-
-function Figure({ label, value }: { label: string; value: string }) {
-  return (
-    <div className={styles.row}>
-      <dt className={styles.label}>{label}</dt>
-      <dd className={styles.value}>{value}</dd>
-    </div>
   );
 }
 

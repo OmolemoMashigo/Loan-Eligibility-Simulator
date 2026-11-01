@@ -224,6 +224,19 @@ describe('EligibilityForm submit', () => {
         name: 'What would fit your budget',
       }),
     ).toBeInTheDocument();
+
+    const affordability = screen.getByRole('heading', {
+      level: 2,
+      name: 'Your affordability',
+    }).parentElement as HTMLElement;
+
+    expect(within(affordability).getByText('Disposable income')).toBeVisible();
+    expect(
+      within(affordability).getByText('Affordability rating').nextSibling,
+    ).toHaveTextContent('Poor');
+    expect(
+      within(affordability).getByText('Debt-to-income ratio').nextSibling,
+    ).toHaveTextContent('20%');
   });
 
   it('replaces the result with a new one after changing the details', async () => {
