@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { EligibilityResponse } from '@/api';
 import { Alert } from '@/components/Alert/Alert';
+import { revealScreen } from '@/lib/revealScreen';
 import { cx } from '@/components/cx';
 import {
   formatMonthDuration,
@@ -148,5 +149,5 @@ export function EligibilityResult({
 
 // Moves focus to the banner so the result is announced and found by keyboard.
 function focusOnMount(node: HTMLDivElement | null) {
-  node?.focus();
+  revealScreen(node);
 }

@@ -166,6 +166,20 @@ test('blank credit score: accepted, priced at the unknown-score rate, and flagge
   await expect(page.getByText(ASK_FOR_SCORE)).toBeVisible();
 });
 
+test('the browser Back button stays on the current step', async ({ page }) => {
+  await fillLoanStep(page);
+  await next(page, 'Personal details');
+
+  await page.evaluate('window.history.back()');
+
+  await expect(
+    page.getByRole('tabpanel', { name: /^Personal details/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Loan Eligibility Simulator' }),
+  ).toBeVisible();
+});
+
 test('what-if: changing the amount updates the estimate without losing the result', async ({
   page,
 }) => {

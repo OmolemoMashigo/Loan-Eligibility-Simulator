@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fillValidForm, openApp, submit } from './helpers';
+import { fillLoanStep, fillValidForm, next, openApp, submit } from './helpers';
 
 /** The smallest screen the app supports. */
 test.use({ viewport: { width: 320, height: 640 } });
@@ -12,6 +12,23 @@ async function hasNoSideScroll(page: Page): Promise<boolean> {
     'document.documentElement.scrollWidth <= document.documentElement.clientWidth',
   );
 }
+
+test('a new step starts at the top, with the header on screen', async ({
+  page,
+}) => {
+  await openApp(page);
+  await fillLoanStep(page);
+  await next(page, 'Personal details');
+
+  expect(await page.evaluate<number>('window.scrollY')).toBe(0);
+
+  const header = page.getByRole('banner');
+  const box = await header.boundingBox();
+
+  expect(box).not.toBeNull();
+  expect(box?.y).toBeGreaterThanOrEqual(0);
+  expect(box?.y).toBeLessThan(24);
+});
 
 test('the form fits a 320px screen with touch-sized controls', async ({
   page,
@@ -33,6 +50,15 @@ test('the result and the full schedule stay inside the screen, with each month s
   await openApp(page);
   await fillValidForm(page);
   await submit(page);
+
+  await expect(
+    page.getByRole('status', {
+      name: /you are likely eligible for this loan/i,
+    }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => page.evaluate<number>('window.scrollY'))
+    .toBe(0);
 
   const table = page.getByRole('table', {
     name: /monthly payments on r\s150\s000 over 24 months/i,

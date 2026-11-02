@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { installHistoryGuard } from '@/lib/historyGuard';
 import { Disclaimer } from './Disclaimer';
 import { Header } from './Header';
 import { SkipLink } from './SkipLink';
@@ -9,6 +10,8 @@ export type PageLayoutProps = {
 };
 
 export function PageLayout({ children }: PageLayoutProps) {
+  useEffect(() => installHistoryGuard(), []);
+
   return (
     <div className={styles.page}>
       <SkipLink />
