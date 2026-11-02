@@ -108,6 +108,7 @@ Accessibility notes, including what was checked by hand, are in
   data in the URL.
 - [ADR 003](docs/adr/003-validation-rules-drive-the-form.md) — form schema
   from `GET /api/loans/validation-rules`.
+- [Changelog](CHANGELOG.md)
 
 ## Stack
 
