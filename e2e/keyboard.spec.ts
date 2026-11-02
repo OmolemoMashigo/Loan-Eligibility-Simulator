@@ -101,11 +101,15 @@ test('the whole journey works from the keyboard alone', async ({ page }) => {
     await keyboard.type(value);
   }
 
+  // Tab lands on the first purpose; the arrow key moves to, and picks, the next.
   await keyboard.press('Tab');
-  await keyboard.type('Home');
   await expect(
-    page.getByRole('combobox', { name: 'What is the loan for?' }),
-  ).toHaveValue('home_improvement');
+    page.getByRole('radio', { name: 'Debt consolidation' }),
+  ).toBeFocused();
+  await keyboard.press('ArrowDown');
+  await expect(
+    page.getByRole('radio', { name: 'Home improvement' }),
+  ).toBeChecked();
   await keyboard.press('Tab');
   await expect(
     page.getByRole('button', { name: 'Check my eligibility' }),

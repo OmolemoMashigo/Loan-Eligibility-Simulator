@@ -1,4 +1,4 @@
-import { type ComponentProps } from 'react';
+import { type ComponentProps, type ReactNode } from 'react';
 import {
   describedById,
   fieldErrorId,
@@ -10,6 +10,8 @@ import styles from './RadioGroup.module.css';
 export type RadioOption = {
   value: string;
   label: string;
+  /** Decoration shown before the label. It is hidden from assistive tech. */
+  icon?: ReactNode;
 };
 
 export type RadioGroupProps = {
@@ -89,6 +91,11 @@ export function RadioGroup({
                 onBlur={onBlur}
                 {...checkedProps}
               />
+              {option.icon ? (
+                <span className={styles.icon} aria-hidden="true">
+                  {option.icon}
+                </span>
+              ) : null}
               {option.label}
             </label>
           );

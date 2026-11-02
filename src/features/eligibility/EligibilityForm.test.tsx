@@ -1,4 +1,4 @@
-import { cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -244,21 +244,43 @@ describe('EligibilityForm', () => {
       screen.getByRole('textbox', { name: 'Repayment period' }),
     ).toHaveAccessibleDescription(/in months, between 6 and 60/i);
 
-    const purpose = screen.getByRole('combobox', {
+    const purpose = screen.getByRole('group', {
       name: 'What is the loan for?',
     });
     const purposeNames = within(purpose)
-      .getAllByRole('option')
-      .map((option) => option.textContent);
+      .getAllByRole('radio')
+      .map((radio) => radio.closest('label')?.textContent);
 
     expect(purposeNames).toEqual([
-      'Select a purpose',
       'Debt consolidation',
       'Home improvement',
       'Education',
       'Medical expenses',
       'Other',
     ]);
+  });
+
+  it('shows an icon beside every loan purpose, without changing its name', async () => {
+    await renderForm();
+
+    const purpose = screen.getByRole('group', {
+      name: 'What is the loan for?',
+    });
+    const radios = within(purpose).getAllByRole('radio');
+
+    expect(radios).toHaveLength(5);
+
+    for (const radio of radios) {
+      const icon = radio.closest('label')?.querySelector('svg');
+
+      expect(icon).not.toBeNull();
+      expect(icon?.parentElement).toHaveAttribute('aria-hidden', 'true');
+    }
+
+    // The icon adds no words: the name is still just the purpose.
+    expect(
+      within(purpose).getByRole('radio', { name: 'Medical expenses' }),
+    ).toBeInTheDocument();
   });
 
   it('echoes the repayment period in years and lets the user pick a purpose', async () => {
@@ -269,15 +291,13 @@ describe('EligibilityForm', () => {
       screen.getByRole('textbox', { name: 'Repayment period' }),
       '24',
     );
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'What is the loan for?' }),
-      'home_improvement',
-    );
+    await user.click(screen.getByRole('radio', { name: 'Home improvement' }));
 
     expect(screen.getByText('24 months = 2 years')).toBeInTheDocument();
     expect(
-      screen.getByRole('combobox', { name: 'What is the loan for?' }),
-    ).toHaveValue('home_improvement');
+      screen.getByRole('radio', { name: 'Home improvement' }),
+    ).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Education' })).not.toBeChecked();
   });
 
   it('shows the API messages for an out-of-range amount and term', async () => {
@@ -311,9 +331,10 @@ describe('EligibilityForm', () => {
     const user = userEvent.setup();
     await renderForm();
 
-    await user.click(
-      screen.getByRole('combobox', { name: 'What is the loan for?' }),
-    );
+    // Move through the group without choosing anything, then leave it.
+    act(() => {
+      screen.getByRole('radio', { name: 'Debt consolidation' }).focus();
+    });
     await user.tab();
 
     expect(

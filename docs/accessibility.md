@@ -70,7 +70,9 @@ Reviewed from the browser's accessibility tree, not with a screen reader:
   and the result as a named region.
 - Every field has a visible label, a hint tied to it with `aria-describedby`,
   and, when invalid, `aria-invalid` and the error text. Employment status is a
-  labelled group of radios.
+  labelled group of radios. The loan purpose is also a labelled group of
+  radios, each with a small outline icon. The icons are decoration, hidden from
+  assistive technology, so every option's name is just its words.
 - The result banner is a `status` region named by its title. It carries a
   hidden "Success:", "Warning:" or "Error:" prefix, so meaning never depends on
   colour or icon alone.

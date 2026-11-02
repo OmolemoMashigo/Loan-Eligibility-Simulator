@@ -35,10 +35,7 @@ export async function fillValidForm(user: UserEvent): Promise<void> {
     screen.getByRole('textbox', { name: 'Repayment period' }),
     '24',
   );
-  await user.selectOptions(
-    screen.getByRole('combobox', { name: 'What is the loan for?' }),
-    'home_improvement',
-  );
+  await user.click(screen.getByRole('radio', { name: 'Home improvement' }));
 }
 
 export async function submit(user: UserEvent): Promise<void> {

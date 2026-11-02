@@ -113,4 +113,30 @@ describe('RadioGroup', () => {
     expect(unemployed).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Employed' })).not.toBeChecked();
   });
+
+  it('shows an icon before a label without making it part of the name', () => {
+    render(
+      <RadioGroup
+        name="purpose"
+        legend="Purpose"
+        options={[
+          {
+            value: 'education',
+            label: 'Education',
+            icon: <svg data-testid="icon" />,
+          },
+          { value: 'other', label: 'Other' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('icon').parentElement).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    expect(
+      screen.getByRole('radio', { name: 'Education' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByTestId('icon')).toHaveLength(1);
+  });
 });

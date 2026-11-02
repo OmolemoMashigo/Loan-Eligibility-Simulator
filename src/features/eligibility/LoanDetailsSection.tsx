@@ -1,7 +1,7 @@
-import { useFormContext } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
 import { CurrencyField } from '@/components/CurrencyField/CurrencyField';
 import { NumberField } from '@/components/NumberField/NumberField';
-import { SelectField } from '@/components/SelectField/SelectField';
+import { RadioGroup } from '@/components/RadioGroup/RadioGroup';
 import { formatMonthDuration } from '@/lib/format';
 import styles from './EligibilityForm.module.css';
 import { parseNumericInput } from './buildFormSchema';
@@ -9,6 +9,7 @@ import type { FormFieldMeta } from './buildFormSchema';
 import type { EligibilityFormValues } from './formDefaults';
 import { loanPurposeOptions } from './labels';
 import { loanAmountHint, loanTermHint } from './loanHints';
+import { LoanPurposeIcon } from './LoanPurposeIcon';
 
 export type LoanDetailsSectionProps = {
   meta: FormFieldMeta;
@@ -21,6 +22,7 @@ export function LoanDetailsSection({
 }: LoanDetailsSectionProps) {
   const {
     register,
+    control,
     watch,
     formState: { errors },
   } = useFormContext<EligibilityFormValues>();
@@ -67,14 +69,26 @@ export function LoanDetailsSection({
             </p>
           ) : null}
         </div>
-        <SelectField
-          id="loanDetails-loanPurpose"
-          label="What is the loan for?"
-          placeholder="Select a purpose"
-          options={loanPurposeOptions(loanPurpose.options)}
-          error={errors.loanDetails?.loanPurpose?.message}
-          required={loanPurpose.required}
-          {...register('loanDetails.loanPurpose')}
+        <Controller
+          name="loanDetails.loanPurpose"
+          control={control}
+          render={({ field, fieldState }) => (
+            <RadioGroup
+              name={field.name}
+              legend="What is the loan for?"
+              options={loanPurposeOptions(loanPurpose.options).map(
+                (option) => ({
+                  ...option,
+                  icon: <LoanPurposeIcon purpose={option.value} />,
+                }),
+              )}
+              required={loanPurpose.required}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
       </div>
     </section>

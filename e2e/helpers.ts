@@ -30,9 +30,7 @@ export async function fillValidForm(page: Page): Promise<void> {
   await page
     .getByRole('textbox', { name: 'Repayment period', exact: true })
     .fill('24');
-  await page
-    .getByRole('combobox', { name: 'What is the loan for?' })
-    .selectOption('home_improvement');
+  await page.getByRole('radio', { name: 'Home improvement' }).check();
 }
 
 export async function submit(page: Page): Promise<void> {
