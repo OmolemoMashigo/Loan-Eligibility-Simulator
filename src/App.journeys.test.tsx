@@ -5,7 +5,13 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { apiMatch } from '@/mocks/api';
 import { setMockLatency } from '@/mocks/latency';
 import { server } from '@/mocks/server';
-import { fillValidForm, submit } from '@/test/formJourney';
+import {
+  fillValidForm,
+  openStep,
+  reachStep,
+  stepTab,
+  submit,
+} from '@/test/formJourney';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import { App } from './App';
 
@@ -21,7 +27,7 @@ async function openApp(): Promise<UserEvent> {
   const user = userEvent.setup();
 
   renderWithProviders(<App />);
-  await screen.findByRole('heading', { name: 'Personal details' });
+  await screen.findByRole('heading', { name: 'Loan details' });
 
   return user;
 }
@@ -89,6 +95,11 @@ describe('journeys', () => {
 
     expect(banner).toHaveFocus();
     expect(banner).toHaveTextContent(/approval likelihood/i);
+    // The report has the page to itself: no steps and no form fields.
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('textbox', { name: 'Monthly income' }),
+    ).not.toBeInTheDocument();
     expect(shown('Recommended amount')).toMatch(/^R\s150\s000$/);
     expect(shown('Interest rate')).toBe('12,5% a year');
     expect(shown('Monthly repayment')).toMatch(/^R\s7\s096$/);
@@ -145,8 +156,13 @@ describe('journeys', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit details' }));
 
-    expect(screen.getByRole('textbox', { name: 'Age' })).toHaveFocus();
-    // Their answers are still there.
+    expect(
+      screen.getByRole('tabpanel', { name: /^Loan details/ }),
+    ).toHaveFocus();
+
+    // Their answers are still there, on the step they were given.
+    await openStep(user, 'Money');
+
     expect(expenses).toHaveValue('24000');
 
     await user.clear(expenses);
@@ -168,25 +184,34 @@ describe('journeys', () => {
   });
 
   describe('errors', () => {
-    it('lists every missing answer, jumps to a field, and clears once the form is valid', async () => {
+    it('lists every missing answer on a step, jumps to a field, and moves on once it is valid', async () => {
       const requests = recordBodies(eligibilityUrl);
       const user = await openApp();
 
-      await submit(user);
+      await user.click(screen.getByRole('button', { name: 'Next' }));
 
       const summary = await screen.findByRole('alert', {
-        name: /please fix 8 problems before continuing/i,
+        name: /please fix 3 problems before continuing/i,
       });
 
       expect(summary).toHaveFocus();
       expect(requests).toHaveLength(0);
+      // Nothing past the first step can be opened until it is right.
+      expect(stepTab('Personal details')).toBeDisabled();
+      expect(stepTab('Money')).toBeDisabled();
 
-      await user.click(within(summary).getByRole('button', { name: /^Age: / }));
+      await user.click(
+        within(summary).getByRole('button', {
+          name: /^Amount you want to borrow: /,
+        }),
+      );
 
-      const age = screen.getByRole('textbox', { name: 'Age' });
+      const amount = screen.getByRole('textbox', {
+        name: 'Amount you want to borrow',
+      });
 
-      expect(age).toHaveFocus();
-      expect(age).toBeInvalid();
+      expect(amount).toHaveFocus();
+      expect(amount).toBeInvalid();
 
       await fillValidForm(user);
       await submit(user);
@@ -196,12 +221,15 @@ describe('journeys', () => {
       expect(
         screen.queryByRole('alert', { name: /please fix/i }),
       ).not.toBeInTheDocument();
-      expect(age).toBeValid();
+      expect(amount).toBeValid();
       expect(requests).toHaveLength(1);
     });
 
     it('shows a field-level message as soon as an answer is left out of range', async () => {
       const user = await openApp();
+
+      await reachStep(user, 'Personal details');
+
       const age = screen.getByRole('textbox', { name: 'Age' });
 
       await user.type(age, '17');
@@ -256,6 +284,7 @@ describe('journeys', () => {
 
       await user.clear(age);
       await user.type(age, '36');
+      await openStep(user, 'Money');
       await submit(user);
 
       expect(
@@ -289,7 +318,9 @@ describe('journeys', () => {
         'Something went wrong. Please try again.',
       );
       // Their answers survive the failure.
-      expect(screen.getByRole('textbox', { name: 'Age' })).toHaveValue('35');
+      expect(
+        screen.getByRole('textbox', { name: 'Monthly income' }),
+      ).toHaveValue('25000');
 
       await user.click(
         within(failure).getByRole('button', { name: 'Try again' }),

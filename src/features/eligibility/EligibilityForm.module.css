@@ -1,7 +1,89 @@
+.lede {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-body);
+}
+
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-6);
+}
+
+/* Author styles beat the browser's own [hidden] rule, so say it again. */
+.form[hidden],
+.panel[hidden] {
+  display: none;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  scroll-margin-top: var(--space-16);
+}
+
+.panel:not([hidden]) {
+  animation: step-in var(--duration-slow) var(--easing-standard) both;
+}
+
+/* The panel is only a focus target after Next or Back; it is not a control. */
+.panel:focus {
+  outline: none;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.actions .submit {
+  flex: 1;
+  width: auto;
+}
+
+.secondary {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard);
+}
+
+.secondary:hover {
+  background-color: var(--color-surface-muted);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.edit {
+  align-self: flex-start;
 }
 
 .section {
@@ -74,6 +156,10 @@
 }
 
 .submit {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-height: var(--touch-min);
   padding: var(--space-3) var(--space-6);

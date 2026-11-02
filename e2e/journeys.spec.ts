@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test';
 import {
   figure,
+  fillLoanStep,
   fillValidForm,
+  next,
   openApp,
+  openStep,
   resultRegion,
+  stepTab,
   submit,
 } from './helpers';
 
@@ -30,6 +34,11 @@ test('happy path: fill in the form and read the estimate and schedule', async ({
 
   await expect(banner).toBeVisible();
   await expect(banner).toBeFocused();
+  // The report has the page to itself: no steps and no form fields.
+  await expect(page.getByRole('tablist')).toHaveCount(0);
+  await expect(
+    page.getByRole('textbox', { name: 'Monthly income' }),
+  ).toHaveCount(0);
   await expect(figure(page, 'Recommended amount')).toHaveText(/^R\s150\s000$/);
   await expect(figure(page, 'Interest rate')).toHaveText('12,5% a year');
   await expect(figure(page, 'Monthly repayment')).toHaveText(/^R\s7\s096$/);
@@ -74,9 +83,11 @@ test('decline path: read why, go back to the details, fix them, and get approved
   await page.getByRole('button', { name: 'Edit details' }).click();
 
   await expect(
-    page.getByRole('textbox', { name: 'Age', exact: true }),
+    page.getByRole('tabpanel', { name: /^Loan details/ }),
   ).toBeFocused();
-  // Their answers are still there.
+
+  // Their answers are still there, on the step they were given.
+  await openStep(page, 'Money');
   await expect(
     page.getByRole('textbox', { name: 'Monthly expenses' }),
   ).toHaveValue('24000');
@@ -96,23 +107,39 @@ test('decline path: read why, go back to the details, fix them, and get approved
   await expect(resultRegion(page)).toHaveCount(1);
 });
 
-test('errors: an empty form lists every problem and links to the fields', async ({
+test('later steps stay locked until the open step is filled in', async ({
   page,
 }) => {
-  await submit(page);
+  await expect(stepTab(page, 'Personal details')).toBeDisabled();
+  await expect(stepTab(page, 'Money')).toBeDisabled();
+
+  await fillLoanStep(page);
+  await next(page, 'Personal details');
+
+  await expect(stepTab(page, 'Personal details')).toBeEnabled();
+  await expect(stepTab(page, 'Money')).toBeDisabled();
+});
+
+test('errors: an empty step lists its problems and links to the fields', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Next' }).click();
 
   const summary = page.getByRole('alert', {
-    name: /please fix 8 problems before continuing/i,
+    name: /please fix 3 problems before continuing/i,
   });
 
   await expect(summary).toBeVisible();
   await expect(summary).toBeFocused();
   await expect(resultRegion(page)).toHaveCount(0);
+  await expect(stepTab(page, 'Personal details')).toBeDisabled();
 
-  await summary.getByRole('button', { name: /^Age: / }).click();
+  await summary
+    .getByRole('button', { name: /^Amount you want to borrow: / })
+    .click();
 
   await expect(
-    page.getByRole('textbox', { name: 'Age', exact: true }),
+    page.getByRole('textbox', { name: 'Amount you want to borrow' }),
   ).toBeFocused();
 
   await fillValidForm(page);

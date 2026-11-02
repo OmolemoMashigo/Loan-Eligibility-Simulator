@@ -5,18 +5,19 @@ re-run it, what was fixed, and what has _not_ been verified.
 
 ## How it is tested
 
-| Check                | What it covers                                                                                                                                                             | Where                         | Run                |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------ |
-| Automated scan (axe) | WCAG 2.0 to 2.2 A/AA rules in a real browser, for six screen states, on a desktop and a 320px phone screen, and for three states in dark mode, switched on with the toggle | `e2e/a11y.spec.ts`            | `npm run test:e2e` |
-| Keyboard             | Tab order matches reading order, every stop has a visible focus ring, the skip link works, a whole journey and error recovery work with no mouse                           | `e2e/keyboard.spec.ts`        | `npm run test:e2e` |
-| Colour contrast      | Every text and control colour pair in the design tokens, for both the light and the dark scheme, computed from `tokens.css`                                                | `src/styles/contrast.test.ts` | `npm test`         |
-| Roles and names      | Component and journey tests find things by role and accessible name (banner, alerts, status, table, groups), so the semantics are asserted throughout                      | `src/**/*.test.tsx`           | `npm test`         |
-| Mobile layout        | No sideways scroll at 320px, touch targets at least 44px, schedule rows stacked                                                                                            | `e2e/mobile.spec.ts`          | `npm run test:e2e` |
+| Check                | What it covers                                                                                                                                                                                             | Where                         | Run                |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------ |
+| Automated scan (axe) | WCAG 2.0 to 2.2 A/AA rules in a real browser, for six screen states, on a desktop and a 320px phone screen, and for three states in dark mode, switched on with the toggle                                 | `e2e/a11y.spec.ts`            | `npm run test:e2e` |
+| Keyboard             | Tab order matches reading order on the first step, every stop has a visible focus ring, the skip link works, arrow keys move between unlocked steps, a whole journey and error recovery work with no mouse | `e2e/keyboard.spec.ts`        | `npm run test:e2e` |
+| Colour contrast      | Every text and control colour pair in the design tokens, for both the light and the dark scheme, computed from `tokens.css`                                                                                | `src/styles/contrast.test.ts` | `npm test`         |
+| Roles and names      | Component and journey tests find things by role and accessible name (banner, alerts, status, table, groups), so the semantics are asserted throughout                                                      | `src/**/*.test.tsx`           | `npm test`         |
+| Mobile layout        | No sideways scroll at 320px, touch targets at least 44px, schedule rows stacked                                                                                                                            | `e2e/mobile.spec.ts`          | `npm run test:e2e` |
 
-The six scanned states are: the empty form, the unemployed notice, the error
-summary with field errors, an eligible result with the full schedule, a
-declined result with next steps, and a result with no credit score and a
-what-if error.
+The six scanned states are: the empty first step, the unemployed notice on
+the personal step, the error summary with field errors on a step, an eligible
+result with the full schedule, a declined result with next steps, and a result
+with no credit score and a what-if error. The result is a view of its own: the
+form and step bar are hidden while it is on screen.
 
 The e2e tests are not part of `npm run verify` yet. Run
 `npx playwright install chromium` once before the first `npm run test:e2e`.
@@ -25,17 +26,30 @@ The e2e tests are not part of `npm run verify` yet. Run
 
 ### Keyboard
 
-- Tab order: skip link, then each form field in order, the submit button, and
-  after a result the what-if fields and the schedule's "Show all" button.
+- Tab order: skip link, the dark mode switch, the open step in the step bar,
+  the fields on that step, then Next. From the second step on, Back sits
+  before Next. After a result, the what-if fields and the schedule's
+  "Show all" button.
+- Later steps in the step bar are disabled until the open step is valid. The
+  arrow keys, Home and End move between the steps that can be opened; they do
+  not skip ahead. Enter or Space opens the focused step.
+- Enter in a field on an earlier step is the same as Next, and does not send
+  the form.
 - No keyboard traps: after the last control, focus leaves the page and wraps
   back to the skip link.
-- Every stop has a solid outline of at least 2px. The currency fields draw it
-  around the whole box, not the bare input.
-- After submitting, focus moves to the result banner or the error summary, so
-  the outcome is announced. Changing the what-if fields never moves focus.
-- The error summary links are buttons. Enter moves focus to the field.
+- Every stop in the tab order has a solid outline of at least 2px. The
+  currency fields draw it around the whole box, not the bare input. The step
+  panel itself is only a focus target after Next or Back, so it has no ring.
+- After Next or Back, focus moves to the step panel so the new step is
+  announced. After submitting, focus moves to the result banner or the error
+  summary. Changing the what-if fields never moves focus.
+- The error summary lists only the problems on the step being left. Its links
+  are buttons. Enter moves focus to the field, opening that field's step if
+  needed.
 - "Show all months" toggles with Enter or Space and keeps focus. It reports
   `aria-expanded`.
+- "Edit your details" and the decline card's "Edit details" hide the result
+  and restore the form on the first step, with the answers still there.
 
 ### Colour contrast
 
@@ -66,8 +80,11 @@ Reviewed from the browser's accessibility tree, not with a screen reader:
 
 - `lang="en-ZA"`, a descriptive page title, and one `h1` followed by `h2`
   sections with no skipped levels.
-- Landmarks: banner, main, the estimate disclaimer as a named note, the form,
-  and the result as a named region.
+- Landmarks: banner, main, the estimate disclaimer as a named note, the form
+  (hidden while a result is on screen), and the result as a named region.
+- The step bar is a named `tablist`. Each step is a `tab` joined to its
+  `tabpanel`. Finished steps include ", completed" in the name. Steps that
+  cannot be opened yet are disabled, not merely unstyled.
 - Every field has a visible label, a hint tied to it with `aria-describedby`,
   and, when invalid, `aria-invalid` and the error text. Employment status is a
   labelled group of radios. The loan purpose is also a labelled group of
@@ -141,10 +158,10 @@ too light makes it report a contrast violation.
   displayed as blocks so each month stacks. Chromium keeps the table roles in
   that mode (the mobile tests rely on them), but Safari may drop them. The
   months stay readable in order either way.
-- **Several announcements at once on submit.** Each field error is an alert, and
-  so is the error summary. After submitting an empty form a screen reader may
-  read all of them. It is correct but chatty. The summary takes focus so it is
-  read first.
+- **Several announcements at once on Next.** Each field error on the open step
+  is an alert, and so is the error summary. After leaving an empty step a
+  screen reader may read all of them. It is correct but chatty. The summary
+  takes focus so it is read first.
 - **Radio buttons are 20px.** Each sits in a labelled row that is 44px high and
   fully clickable, so the effective target is larger than the control.
 - **Not checked:** text spacing overrides, 200% and 400% browser zoom beyond the

@@ -96,7 +96,7 @@ test.describe('the dark mode toggle', () => {
     ).toBeVisible();
     await expect(page.getByRole('table')).toBeVisible();
     await expect(
-      page.getByRole('textbox', { name: 'Monthly income' }),
+      page.locator('input[name="financialInfo.monthlyIncome"]'),
     ).toHaveValue(/25\s?000/);
   });
 

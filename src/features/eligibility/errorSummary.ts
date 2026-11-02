@@ -6,8 +6,11 @@ export type ErrorSummaryItem = {
   message: string;
 };
 
-/** Form order. The summary lists problems in the order the user sees fields. */
+/** Step order. The summary lists problems in the order the user meets fields. */
 const FIELD_LABELS: readonly { path: string; label: string }[] = [
+  { path: 'loanDetails.requestedAmount', label: 'Amount you want to borrow' },
+  { path: 'loanDetails.loanTerm', label: 'Repayment period' },
+  { path: 'loanDetails.loanPurpose', label: 'What is the loan for?' },
   { path: 'personalInfo.age', label: 'Age' },
   { path: 'personalInfo.employmentStatus', label: 'Employment status' },
   {
@@ -21,9 +24,6 @@ const FIELD_LABELS: readonly { path: string; label: string }[] = [
     label: 'Total existing debt (outstanding balance)',
   },
   { path: 'financialInfo.creditScore', label: 'Credit score' },
-  { path: 'loanDetails.requestedAmount', label: 'Amount you want to borrow' },
-  { path: 'loanDetails.loanTerm', label: 'Repayment period' },
-  { path: 'loanDetails.loanPurpose', label: 'What is the loan for?' },
 ];
 
 export function isFormFieldPath(path: string): boolean {

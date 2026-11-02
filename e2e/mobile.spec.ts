@@ -20,10 +20,8 @@ test('the form fits a 320px screen with touch-sized controls', async ({
 
   expect(await hasNoSideScroll(page)).toBe(true);
 
-  const submitButton = page.getByRole('button', {
-    name: 'Check my eligibility',
-  });
-  const box = await submitButton.boundingBox();
+  const nextButton = page.getByRole('button', { name: 'Next' });
+  const box = await nextButton.boundingBox();
 
   expect(box?.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
   expect(box?.width).toBeLessThanOrEqual(320);

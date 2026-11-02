@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { fillValidForm, openApp, submit } from './helpers';
+import { fillValidForm, openApp, reachStep, submit } from './helpers';
 
 /** The WCAG 2.2 A and AA rules axe can check automatically. */
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -35,6 +35,7 @@ test('the empty form has no WCAG A/AA violations', async ({ page }) => {
 });
 
 test('the unemployed notice has no violations', async ({ page }) => {
+  await reachStep(page, 'Personal details');
   await page.getByRole('radio', { name: 'Unemployed', exact: true }).check();
 
   await expect(page.getByRole('radio', { name: 'Unemployed' })).toBeChecked();
@@ -44,7 +45,7 @@ test('the unemployed notice has no violations', async ({ page }) => {
 test('the error summary and field errors have no violations', async ({
   page,
 }) => {
-  await submit(page);
+  await page.getByRole('button', { name: 'Next' }).click();
 
   await expect(page.getByRole('alert', { name: /please fix/i })).toBeVisible();
   await expectNoViolations(page);
@@ -108,10 +109,11 @@ test.describe('in dark mode', () => {
   }) => {
     await expectNoViolations(page);
 
+    await reachStep(page, 'Personal details');
     await page.getByRole('radio', { name: 'Unemployed', exact: true }).check();
     await expectNoViolations(page);
 
-    await submit(page);
+    await page.getByRole('button', { name: 'Next' }).click();
     await expect(
       page.getByRole('alert', { name: /please fix/i }),
     ).toBeVisible();

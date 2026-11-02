@@ -7,6 +7,7 @@ import { VALIDATION_RULES_RESPONSE } from '@/mocks/engine';
 import { FORM_VALIDATION_DEFAULTS } from './formDefaults';
 import { setMockLatency } from '@/mocks/latency';
 import { server } from '@/mocks/server';
+import { reachStep } from '@/test/formJourney';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import { EligibilityForm } from './EligibilityForm';
 
@@ -14,7 +15,7 @@ async function renderForm() {
   renderWithProviders(<EligibilityForm />);
 
   expect(
-    await screen.findByRole('heading', { name: 'Personal details' }),
+    await screen.findByRole('heading', { name: 'Loan details' }),
   ).toBeInTheDocument();
 }
 
@@ -34,7 +35,9 @@ describe('EligibilityForm', () => {
   });
 
   it('loads age and employment status from the validation-rules API', async () => {
+    const user = userEvent.setup();
     await renderForm();
+    await reachStep(user, 'Personal details');
 
     expect(
       screen.getByRole('textbox', { name: 'Age' }),
@@ -51,6 +54,7 @@ describe('EligibilityForm', () => {
   it('shows duration and a months echo only when employed (SI-3, SI-5)', async () => {
     const user = userEvent.setup();
     await renderForm();
+    await reachStep(user, 'Personal details');
 
     await user.click(screen.getByRole('radio', { name: 'Employed' }));
 
@@ -61,12 +65,15 @@ describe('EligibilityForm', () => {
 
     await user.type(duration, '24');
 
-    expect(screen.getByText('24 months = 2 years')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('tabpanel')).getByText('24 months = 2 years'),
+    ).toBeInTheDocument();
   });
 
   it('hides duration for unemployed and retired and explains unemployed (SI-3)', async () => {
     const user = userEvent.setup();
     await renderForm();
+    await reachStep(user, 'Personal details');
 
     await user.click(screen.getByRole('radio', { name: 'Employed' }));
     await user.type(
@@ -92,6 +99,7 @@ describe('EligibilityForm', () => {
   it('shows the API age message after an invalid blur', async () => {
     const user = userEvent.setup();
     await renderForm();
+    await reachStep(user, 'Personal details');
 
     const age = screen.getByRole('textbox', { name: 'Age' });
     await user.type(age, '17');
@@ -130,12 +138,14 @@ describe('EligibilityForm', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(
-      await screen.findByRole('heading', { name: 'Personal details' }),
+      await screen.findByRole('heading', { name: 'Loan details' }),
     ).toBeInTheDocument();
   });
 
   it('shows the money fields with rand inputs and an optional credit score', async () => {
+    const user = userEvent.setup();
     await renderForm();
+    await reachStep(user, 'Money');
 
     expect(screen.getByRole('heading', { name: 'Money' })).toBeInTheDocument();
 
@@ -166,6 +176,7 @@ describe('EligibilityForm', () => {
   it('accepts a blank credit score and 0 existing debt on blur (SI-8, SI-9)', async () => {
     const user = userEvent.setup();
     await renderForm();
+    await reachStep(user, 'Money');
 
     await user.click(
       screen.getByRole('textbox', { name: 'Credit score (optional)' }),
@@ -197,6 +208,7 @@ describe('EligibilityForm', () => {
   it('shows the API messages for low income and an out-of-range score', async () => {
     const user = userEvent.setup();
     await renderForm();
+    await reachStep(user, 'Money');
 
     await user.type(
       screen.getByRole('textbox', { name: 'Monthly income' }),
@@ -383,7 +395,7 @@ describe('EligibilityForm', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: 'Personal details' }),
+        screen.getByRole('heading', { name: 'Loan details' }),
       ).toBeInTheDocument();
     });
   });

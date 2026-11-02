@@ -6,7 +6,7 @@ import {
 } from './errorSummary';
 
 describe('summariseFormErrors', () => {
-  it('lists nested form errors in form order with field labels', () => {
+  it('lists nested form errors in step order with field labels', () => {
     const items = summariseFormErrors({
       loanDetails: {
         loanTerm: { type: 'custom', message: 'Term is wrong' },
@@ -20,16 +20,16 @@ describe('summariseFormErrors', () => {
     });
 
     expect(items).toEqual([
+      {
+        path: 'loanDetails.loanTerm',
+        label: 'Repayment period',
+        message: 'Term is wrong',
+      },
       { path: 'personalInfo.age', label: 'Age', message: 'Age is wrong' },
       {
         path: 'financialInfo.creditScore',
         label: 'Credit score',
         message: 'Score is wrong',
-      },
-      {
-        path: 'loanDetails.loanTerm',
-        label: 'Repayment period',
-        message: 'Term is wrong',
       },
     ]);
   });
