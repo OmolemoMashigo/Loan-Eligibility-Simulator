@@ -229,4 +229,33 @@ describe('EligibilityResult', () => {
       'Adjust card',
     );
   });
+
+  it('asks for a credit score only when none was given', () => {
+    const { rerender } = render(
+      <EligibilityResult response={eligible} loanTerm={24} />,
+    );
+    const message = 'Add your credit score for a more accurate estimate.';
+
+    expect(screen.queryByText(message)).not.toBeInTheDocument();
+
+    rerender(
+      <EligibilityResult
+        response={eligible}
+        loanTerm={24}
+        creditScoreMissing
+      />,
+    );
+
+    expect(screen.getByText(message)).toBeVisible();
+
+    rerender(
+      <EligibilityResult
+        response={declinedWithNothingAffordable}
+        loanTerm={24}
+        creditScoreMissing
+      />,
+    );
+
+    expect(screen.getByText(message)).toBeVisible();
+  });
 });

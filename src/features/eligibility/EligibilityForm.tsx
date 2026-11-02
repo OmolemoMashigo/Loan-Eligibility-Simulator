@@ -281,6 +281,9 @@ function EligibilityFormFields({
             key={feedbackKey}
             response={shown.response}
             loanTerm={shown.request.loanDetails.loanTerm}
+            creditScoreMissing={
+              shown.request.financialInfo.creditScore === undefined
+            }
             updating={recalculate.isPending}
             nextSteps={
               shown.response.eligibilityResult.isEligible ? undefined : (

@@ -15,6 +15,8 @@ export type EligibilityResultProps = {
   response: EligibilityResponse;
   /** The repayment period the user asked for, in months. */
   loanTerm: number;
+  /** No credit score was given, so the estimate used the unknown-score rate. */
+  creditScoreMissing?: boolean;
   /** A card shown straight after the estimate, with what to try next. */
   nextSteps?: ReactNode;
   /** A card shown after the next steps, for changing the loan. */
@@ -28,6 +30,7 @@ export type EligibilityResultProps = {
 export function EligibilityResult({
   response,
   loanTerm,
+  creditScoreMissing = false,
   nextSteps,
   adjust,
   updating = false,
@@ -101,6 +104,11 @@ export function EligibilityResult({
             repayment period.
           </p>
         )}
+        {creditScoreMissing ? (
+          <p className={styles.note}>
+            Add your credit score for a more accurate estimate.
+          </p>
+        ) : null}
       </div>
       {nextSteps}
       {adjust}
