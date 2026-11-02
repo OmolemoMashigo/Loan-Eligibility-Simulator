@@ -153,14 +153,10 @@
   font-size: var(--font-size-sm);
 }
 
-/* The headline numbers. */
+/* The headline numbers: #2E71EF, slightly darkened so the small labels stay AA. */
 .highlight {
-  background-image: linear-gradient(
-    135deg,
-    var(--color-brand),
-    var(--color-brand-hover)
-  );
-  color: var(--color-text-on-brand);
+  background-color: color-mix(in srgb, var(--color-header-from) 92%, #000);
+  color: var(--color-header-text);
 }
 
 .highlight .label {

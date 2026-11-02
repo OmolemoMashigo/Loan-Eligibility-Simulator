@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { fillValidForm, openApp, submit } from './helpers';
 
-const LIGHT_PAGE = 'rgb(238, 243, 241)';
-const DARK_PAGE = 'rgb(14, 22, 20)';
+const LIGHT_PAGE = 'rgb(245, 247, 251)';
+const DARK_PAGE = 'rgb(11, 15, 23)';
 
 test.describe('the dark mode toggle', () => {
   // Even a system set to dark must not change the default.

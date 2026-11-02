@@ -37,13 +37,14 @@ function contrast(foreground: string, background: string): number {
 
 describe('design tokens', () => {
   it('exposes the agreed colour, type, and space tokens', () => {
-    expect(token('--color-bg')).toBe('#eef3f1');
+    expect(token('--color-bg')).toBe('#f5f7fb');
     expect(token('--color-surface')).toBe('#ffffff');
-    expect(token('--color-text')).toBe('#12201c');
-    expect(token('--color-text-muted')).toBe('#51615b');
-    expect(token('--color-brand')).toBe('#0b6b61');
-    expect(token('--color-brand-hover')).toBe('#08544c');
-    expect(token('--color-success')).toBe('#17704b');
+    expect(token('--color-text')).toBe('#111827');
+    expect(token('--color-text-muted')).toBe('#4b5563');
+    expect(token('--color-brand')).toBe('#1e5ae8');
+    expect(token('--color-brand-hover')).toBe('#1546c4');
+    expect(token('--color-brand-bright')).toBe('#2e71ef');
+    expect(token('--color-success')).toBe('#166534');
     expect(token('--color-danger')).toBe('#a02828');
     expect(token('--color-warning')).toBe('#8a5a0a');
     expect(token('--font-sans').toLowerCase()).toContain('segoe ui');

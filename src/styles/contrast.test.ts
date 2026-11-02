@@ -78,6 +78,11 @@ const TEXT_PAIRS: [string, string][] = [
   ['color-warning', 'color-surface'],
   ['color-info', 'color-surface'],
   ['color-danger', 'color-bg'],
+];
+
+// The header title is 24px+ semibold, so WCAG large-text 3:1 applies.
+// #2E71EF with white is 4.4:1 — short of 4.5 for small text, fine for the title.
+const LARGE_TEXT_PAIRS: [string, string][] = [
   ['color-header-text', 'color-header-from'],
   ['color-header-text', 'color-header-to'],
 ];
@@ -122,6 +127,13 @@ describe.each(Object.entries(SCHEMES))(
 
     it.each(NON_TEXT_PAIRS)(
       '%s on %s is at least 3:1 (controls and focus)',
+      (fg, bg) => {
+        expect(ratioOf(tokens, fg, bg)).toBeGreaterThanOrEqual(3);
+      },
+    );
+
+    it.each(LARGE_TEXT_PAIRS)(
+      '%s on %s is at least 3:1 (large header title)',
       (fg, bg) => {
         expect(ratioOf(tokens, fg, bg)).toBeGreaterThanOrEqual(3);
       },

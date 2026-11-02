@@ -27,12 +27,20 @@
   height: 1.75rem;
   border: 2px solid currentColor;
   border-radius: var(--radius-pill);
-  background-color: rgb(255 255 255 / 14%);
+  background-color: color-mix(
+    in srgb,
+    var(--color-header-text) 14%,
+    transparent
+  );
   transition: background-color var(--duration-base) var(--easing-standard);
 }
 
 .toggle:hover .track {
-  background-color: rgb(255 255 255 / 26%);
+  background-color: color-mix(
+    in srgb,
+    var(--color-header-text) 26%,
+    transparent
+  );
 }
 
 .thumb {

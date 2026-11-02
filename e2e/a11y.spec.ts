@@ -100,7 +100,7 @@ test.describe('in dark mode', () => {
     // Without this the scans below could quietly be looking at the light theme.
     await expect(page.locator('body')).toHaveCSS(
       'background-color',
-      'rgb(14, 22, 20)',
+      'rgb(11, 15, 23)',
     );
   });
 

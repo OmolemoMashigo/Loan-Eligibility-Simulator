@@ -59,20 +59,21 @@ every pair is tested for both.
 
 | Pair                                                                  | Light      | Dark       |
 | --------------------------------------------------------------------- | ---------- | ---------- |
-| Text on card                                                          | 16.8       | 14.0       |
-| Muted text on card                                                    | 6.5        | 7.6        |
-| Muted text on page background                                         | 5.8        | 8.4        |
-| Muted text on muted surface (result tiles)                            | 5.4        | 6.7        |
-| Button and highlighted tile text on brand                             | 6.4        | 8.1        |
-| Header title on the darkest and lightest ends of the header           | 10.1, 6.4  | 10.7, 7.1  |
-| Error text on card                                                    | 7.4        | 8.1        |
-| Success, warning, danger and info colours on their tinted backgrounds | 5.2 to 6.7 | 7.5 to 8.3 |
-| Focus ring (brand) on card                                            | 6.4        | 8.0        |
-| Focus ring on tinted banners                                          | 5.4 to 5.6 | 6.7 to 7.6 |
-| **Input border on card**                                              | **3.7**    | **5.1**    |
+| Text on card                                                          | 17.7       | 16.2       |
+| Muted text on card                                                    | 7.6        | 8.1        |
+| Muted text on page background                                         | 7.0        | 8.8        |
+| Muted text on muted surface (result tiles)                            | 6.7        | 7.3        |
+| Button text on brand                                                  | 5.7        | 7.0        |
+| Header title on the header (`#2E71EF`)                                | 4.4        | 4.4        |
+| Error text on card                                                    | 7.4        | 8.7        |
+| Success, warning, danger and info colours on their tinted backgrounds | 5.2 to 7.8 | 7.6 to 8.6 |
+| Focus ring (brand) on card                                            | 5.7        | 6.8        |
+| Focus ring on tinted banners                                          | 4.8 to 5.4 | 5.3 to 6.1 |
+| **Input border on card**                                              | **5.0**    | **5.9**    |
 
-The balance chart's line uses the brand colour (5.3:1 on its tile in the light
-scheme, 7.2:1 in the dark). Its soft fill and dashed guide lines are decoration, not information.
+The header title is large text (24px+), so 3:1 is the WCAG bar; 4.4:1 is above that.
+The balance chart's line uses the brand colour (5.0:1 on its tile in the light
+scheme, 6.1:1 in the dark). Its soft fill and dashed guide lines are decoration, not information.
 
 ### Screen reader semantics
 
@@ -102,7 +103,7 @@ Reviewed from the browser's accessibility tree, not with a screen reader:
 
 - **Input borders were too faint (WCAG 1.4.11).** Text inputs, the currency
   field and the select used the soft card border, which is 1.5:1 on white. A new
-  token, `--color-border-control` (3.7:1 in the light scheme), now outlines every input.
+  token, `--color-border-control` (5.0:1 in the light scheme), now outlines every input.
   Cards and dividers keep the soft border because they are decorative.
 
 The automated scan found no violations in any state, so nothing else needed
@@ -114,7 +115,7 @@ too light makes it report a contrast violation.
 - It is a real switch (`role="switch"`, `aria-checked`) named "Dark mode". It
   is the first stop after the skip link, works with Space or Enter, keeps focus
   when used, and is 44px square to tap.
-- It sits on the teal header, where the page's brand-coloured focus ring would
+- It sits on the header, where the page's brand-coloured focus ring would
   disappear, so it draws its ring in the header's text colour instead. That
   colour is tested against both ends of the header in both palettes.
 - The theme is set by a small script in `public/theme-init.js` that runs before
