@@ -12,7 +12,10 @@ export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
   forbidOnly: Boolean(process.env['CI']),
-  reporter: 'list',
+  // On CI, also write an HTML report that the workflow uploads when a test fails.
+  reporter: process.env['CI']
+    ? [['list'], ['html', { open: 'never' }]]
+    : 'list',
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',

@@ -23,6 +23,14 @@ export default defineConfig({
       reporter: ['text', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/test/**', 'src/main.tsx', 'src/vite-env.d.ts'],
+      // CI fails when coverage falls below these. They sit a little under the
+      // current numbers so a real drop is caught without failing on noise.
+      thresholds: {
+        statements: 90,
+        branches: 80,
+        functions: 90,
+        lines: 90,
+      },
     },
   },
 });
