@@ -1,0 +1,38 @@
+.ring {
+  flex-shrink: 0;
+  width: 4rem;
+  height: 4rem;
+}
+
+.success {
+  color: var(--color-success);
+}
+
+.warning {
+  color: var(--color-warning);
+}
+
+.track {
+  stroke: currentColor;
+  opacity: 0.22;
+}
+
+/* The circle's length is 100 units, so the filled length is the percentage. */
+.fill {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-dasharray: var(--filled) 100;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  animation: fill var(--duration-slow) var(--easing-standard) 150ms both;
+}
+
+@keyframes fill {
+  from {
+    stroke-dasharray: 0 100;
+  }
+
+  to {
+    stroke-dasharray: var(--filled) 100;
+  }
+}

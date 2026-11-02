@@ -2,10 +2,20 @@ import type { EligibilityResponse } from '@/api';
 import { formatPercent, formatWholeRand } from '@/lib/format';
 import styles from './EligibilityResult.module.css';
 import { affordabilityScoreLabel } from './labels';
-import { ResultFigure } from './ResultFigure';
+import { ResultFigure, type FigureTone } from './ResultFigure';
 
 export type AffordabilityBreakdownProps = {
   analysis: EligibilityResponse['affordabilityAnalysis'];
+};
+
+const SCORE_TONE: Record<
+  EligibilityResponse['affordabilityAnalysis']['affordabilityScore'],
+  FigureTone
+> = {
+  excellent: 'success',
+  good: 'success',
+  fair: 'warning',
+  poor: 'danger',
 };
 
 export function AffordabilityBreakdown({
@@ -33,6 +43,7 @@ export function AffordabilityBreakdown({
         <ResultFigure
           label="Affordability rating"
           value={affordabilityScoreLabel(analysis.affordabilityScore)}
+          tone={SCORE_TONE[analysis.affordabilityScore]}
           hint="How comfortably the repayment on the amount you asked for fits into your disposable income."
         />
       </dl>

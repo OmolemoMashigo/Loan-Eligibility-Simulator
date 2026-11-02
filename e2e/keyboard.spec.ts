@@ -15,12 +15,14 @@ const FOCUS_STATE = `(() => {
   const wrapper = el.parentElement ? getComputedStyle(el.parentElement) : own;
   const name =
     el.getAttribute('name') ||
+    el.getAttribute('aria-label') ||
     (el.tagName === 'BUTTON' || el.tagName === 'A' ? el.textContent.trim() : el.tagName);
   return JSON.stringify({ name, visible: visible(own) || visible(wrapper) });
 })()`;
 
 const FORM_TAB_ORDER = [
   'Skip to main content',
+  'Dark mode',
   'personalInfo.age',
   'personalInfo.employmentStatus',
   'financialInfo.monthlyIncome',

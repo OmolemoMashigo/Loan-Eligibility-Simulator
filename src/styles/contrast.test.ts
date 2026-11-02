@@ -22,13 +22,11 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-/** Every `--name: #rrggbb` the stylesheet declares. */
-function colourTokens(): Record<string, string> {
+/** Every `--name: #rrggbb` declared in a piece of CSS. */
+function colourTokens(css: string): Record<string, string> {
   const tokens: Record<string, string> = {};
 
-  for (const match of tokensCss.matchAll(
-    /--([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi,
-  )) {
+  for (const match of css.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)) {
     const [, name, value] = match;
 
     if (name && value) {
@@ -39,9 +37,72 @@ function colourTokens(): Record<string, string> {
   return tokens;
 }
 
-const tokens = colourTokens();
+const DARK_SELECTOR = ":root[data-theme='dark']";
+const darkStart = tokensCss.indexOf(DARK_SELECTOR);
+// The dark block ends where the reduced-motion block begins.
+const darkEnd = tokensCss.indexOf('@media (prefers-reduced-motion');
+const lightTokens = colourTokens(tokensCss.slice(0, darkStart));
+const darkOverrides = colourTokens(tokensCss.slice(darkStart, darkEnd));
 
-function ratioOf(foreground: string, background: string): number {
+const SCHEMES: Record<string, Record<string, string>> = {
+  light: lightTokens,
+  // Anything the dark block does not redefine keeps its light value.
+  dark: { ...lightTokens, ...darkOverrides },
+};
+
+// WCAG 1.4.3: text needs 4.5:1.
+const TEXT_PAIRS: [string, string][] = [
+  ['color-text', 'color-surface'],
+  ['color-text', 'color-bg'],
+  ['color-text', 'color-surface-muted'],
+  ['color-text', 'color-brand-subtle'],
+  ['color-text', 'color-success-subtle'],
+  ['color-text', 'color-warning-subtle'],
+  ['color-text', 'color-danger-subtle'],
+  ['color-text-muted', 'color-surface'],
+  ['color-text-muted', 'color-bg'],
+  ['color-text-muted', 'color-surface-muted'],
+  ['color-text-muted', 'color-brand-subtle'],
+  ['color-text-on-brand', 'color-brand'],
+  ['color-text-on-brand', 'color-brand-hover'],
+  ['color-brand', 'color-surface'],
+  ['color-brand', 'color-bg'],
+  ['color-brand', 'color-brand-subtle'],
+  ['color-brand-hover', 'color-surface'],
+  ['color-success', 'color-success-subtle'],
+  ['color-danger', 'color-danger-subtle'],
+  ['color-warning', 'color-warning-subtle'],
+  ['color-info', 'color-info-subtle'],
+  ['color-success', 'color-surface'],
+  ['color-danger', 'color-surface'],
+  ['color-warning', 'color-surface'],
+  ['color-info', 'color-surface'],
+  ['color-danger', 'color-bg'],
+  ['color-header-text', 'color-header-from'],
+  ['color-header-text', 'color-header-to'],
+];
+
+// WCAG 1.4.11: the edge of a control, the focus ring (--color-focus is
+// --color-brand) and the chart line need 3:1.
+const NON_TEXT_PAIRS: [string, string][] = [
+  ['color-border-control', 'color-surface'],
+  ['color-danger', 'color-surface'],
+  ['color-brand', 'color-surface'],
+  ['color-brand', 'color-bg'],
+  // The balance chart's line sits on a muted tile.
+  ['color-brand', 'color-surface-muted'],
+  ['color-brand', 'color-brand-subtle'],
+  ['color-brand', 'color-success-subtle'],
+  ['color-brand', 'color-warning-subtle'],
+  ['color-brand', 'color-danger-subtle'],
+  ['color-brand', 'color-info-subtle'],
+];
+
+function ratioOf(
+  tokens: Record<string, string>,
+  foreground: string,
+  background: string,
+): number {
   const fg = tokens[foreground];
   const bg = tokens[background];
 
@@ -52,49 +113,48 @@ function ratioOf(foreground: string, background: string): number {
   return contrastRatio(fg, bg);
 }
 
-// WCAG 1.4.3: text needs 4.5:1.
-const TEXT_PAIRS: [string, string][] = [
-  ['color-text', 'color-surface'],
-  ['color-text', 'color-bg'],
-  ['color-text', 'color-success-subtle'],
-  ['color-text', 'color-warning-subtle'],
-  ['color-text-muted', 'color-surface'],
-  ['color-text-muted', 'color-bg'],
-  ['color-text-muted', 'color-surface-muted'],
-  ['color-text-on-brand', 'color-brand'],
-  ['color-text-on-brand', 'color-brand-hover'],
-  ['color-brand', 'color-surface'],
-  ['color-brand', 'color-brand-subtle'],
-  ['color-success', 'color-success-subtle'],
-  ['color-danger', 'color-danger-subtle'],
-  ['color-warning', 'color-warning-subtle'],
-  ['color-info', 'color-info-subtle'],
-  ['color-danger', 'color-surface'],
-  ['color-danger', 'color-bg'],
-];
+describe.each(Object.entries(SCHEMES))(
+  '%s colours meet WCAG 2.2 AA',
+  (_, tokens) => {
+    it.each(TEXT_PAIRS)('%s on %s is at least 4.5:1 (text)', (fg, bg) => {
+      expect(ratioOf(tokens, fg, bg)).toBeGreaterThanOrEqual(4.5);
+    });
 
-// WCAG 1.4.11: the edge of a control and the focus ring (--color-focus is
-// --color-brand) need 3:1.
-const NON_TEXT_PAIRS: [string, string][] = [
-  ['color-border-control', 'color-surface'],
-  ['color-danger', 'color-surface'],
-  ['color-brand', 'color-surface'],
-  ['color-brand', 'color-bg'],
-  ['color-brand', 'color-success-subtle'],
-  ['color-brand', 'color-warning-subtle'],
-  ['color-brand', 'color-danger-subtle'],
-  ['color-brand', 'color-info-subtle'],
-];
+    it.each(NON_TEXT_PAIRS)(
+      '%s on %s is at least 3:1 (controls and focus)',
+      (fg, bg) => {
+        expect(ratioOf(tokens, fg, bg)).toBeGreaterThanOrEqual(3);
+      },
+    );
+  },
+);
 
-describe('colour tokens meet WCAG 2.2 AA', () => {
-  it.each(TEXT_PAIRS)('%s on %s is at least 4.5:1 (text)', (fg, bg) => {
-    expect(ratioOf(fg, bg)).toBeGreaterThanOrEqual(4.5);
+describe('the dark scheme', () => {
+  it('redefines the colours that matter, so nothing is left light by accident', () => {
+    for (const name of [
+      'color-bg',
+      'color-surface',
+      'color-text',
+      'color-text-muted',
+      'color-text-on-brand',
+      'color-brand',
+      'color-border-control',
+      'color-success',
+      'color-danger',
+      'color-warning',
+      'color-info',
+    ]) {
+      expect(darkOverrides[name], name).toBeDefined();
+      expect(darkOverrides[name], name).not.toBe(lightTokens[name]);
+    }
   });
 
-  it.each(NON_TEXT_PAIRS)(
-    '%s on %s is at least 3:1 (controls and focus)',
-    (fg, bg) => {
-      expect(ratioOf(fg, bg)).toBeGreaterThanOrEqual(3);
-    },
-  );
+  it('is actually dark: the page is darker than the text on it', () => {
+    const dark = SCHEMES['dark'] ?? {};
+
+    expect(luminance(dark['color-bg'] ?? '#ffffff')).toBeLessThan(
+      luminance(dark['color-text'] ?? '#000000'),
+    );
+    expect(luminance(dark['color-bg'] ?? '#ffffff')).toBeLessThan(0.05);
+  });
 });

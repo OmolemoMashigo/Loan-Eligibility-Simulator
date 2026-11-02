@@ -37,15 +37,15 @@ function contrast(foreground: string, background: string): number {
 
 describe('design tokens', () => {
   it('exposes the agreed colour, type, and space tokens', () => {
-    expect(token('--color-bg')).toBe('#f4f1ea');
+    expect(token('--color-bg')).toBe('#eef3f1');
     expect(token('--color-surface')).toBe('#ffffff');
-    expect(token('--color-text')).toBe('#1c2430');
-    expect(token('--color-text-muted')).toBe('#5c6570');
-    expect(token('--color-brand')).toBe('#0f5c56');
-    expect(token('--color-brand-hover')).toBe('#0a4a45');
-    expect(token('--color-success')).toBe('#1b6b4a');
-    expect(token('--color-danger')).toBe('#9b2c2c');
-    expect(token('--color-warning')).toBe('#8a5a12');
+    expect(token('--color-text')).toBe('#12201c');
+    expect(token('--color-text-muted')).toBe('#51615b');
+    expect(token('--color-brand')).toBe('#0b6b61');
+    expect(token('--color-brand-hover')).toBe('#08544c');
+    expect(token('--color-success')).toBe('#17704b');
+    expect(token('--color-danger')).toBe('#a02828');
+    expect(token('--color-warning')).toBe('#8a5a0a');
     expect(token('--font-sans').toLowerCase()).toContain('segoe ui');
     expect(token('--font-size-md')).toBe('1rem');
     expect(token('--space-4')).toBe('1rem');

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { EligibilityResponse } from '@/api';
 import { Alert } from '@/components/Alert/Alert';
+import { cx } from '@/components/cx';
 import {
   formatMonthDuration,
   formatPercent,
@@ -9,7 +10,8 @@ import {
 import { AffordabilityBreakdown } from './AffordabilityBreakdown';
 import styles from './EligibilityResult.module.css';
 import { riskCategoryLabel } from './labels';
-import { ResultFigure } from './ResultFigure';
+import { LikelihoodRing } from './LikelihoodRing';
+import { ResultFigure, type FigureTone } from './ResultFigure';
 
 export type EligibilityResultProps = {
   response: EligibilityResponse;
@@ -25,6 +27,15 @@ export type EligibilityResultProps = {
   updating?: boolean;
   /** Extra cards shown after the affordability breakdown. */
   children?: ReactNode;
+};
+
+const RISK_TONE: Record<
+  EligibilityResponse['eligibilityResult']['riskCategory'],
+  FigureTone
+> = {
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
 };
 
 export function EligibilityResult({
@@ -56,16 +67,31 @@ export function EligibilityResult({
         }
       >
         <p>{result.decisionReason}</p>
-        <dl className={styles.facts}>
-          <div className={styles.fact}>
-            <dt>Approval likelihood</dt>
-            <dd>{formatPercent(result.approvalLikelihood)}</dd>
-          </div>
-          <div className={styles.fact}>
-            <dt>Risk level</dt>
-            <dd>{riskCategoryLabel(result.riskCategory)}</dd>
-          </div>
-        </dl>
+        <div className={styles.summary}>
+          <LikelihoodRing
+            percent={result.approvalLikelihood}
+            tone={result.isEligible ? 'success' : 'warning'}
+          />
+          <dl className={styles.facts}>
+            <div className={styles.fact}>
+              <dt>Approval likelihood</dt>
+              <dd className={styles.factValue}>
+                {formatPercent(result.approvalLikelihood)}
+              </dd>
+            </div>
+            <div className={styles.fact}>
+              <dt>Risk level</dt>
+              <dd
+                className={cx(
+                  styles.pill,
+                  styles[RISK_TONE[result.riskCategory]],
+                )}
+              >
+                {riskCategoryLabel(result.riskCategory)}
+              </dd>
+            </div>
+          </dl>
+        </div>
       </Alert>
       <div className={styles.figures}>
         <h2 className={styles.heading}>
@@ -76,6 +102,7 @@ export function EligibilityResult({
             <ResultFigure
               label="Recommended amount"
               value={formatWholeRand(loan.recommendedAmount)}
+              highlight
             />
             <ResultFigure
               label="Maximum affordable amount"
@@ -92,6 +119,7 @@ export function EligibilityResult({
             <ResultFigure
               label="Monthly repayment"
               value={formatWholeRand(loan.monthlyPayment)}
+              highlight
             />
             <ResultFigure
               label="Total repayment"
