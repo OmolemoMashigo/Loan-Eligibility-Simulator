@@ -45,8 +45,9 @@
   gap: var(--space-6);
 }
 
+/* The gap clears the input's focus ring, which sits just outside its edge. */
 .echo {
-  margin: 0;
+  margin: var(--space-3) 0 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
