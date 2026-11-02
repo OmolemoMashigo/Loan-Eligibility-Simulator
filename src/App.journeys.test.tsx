@@ -161,7 +161,7 @@ describe('journeys', () => {
     ).toHaveFocus();
 
     // Their answers are still there, on the step they were given.
-    await openStep(user, 'Money');
+    await openStep(user, 'Results');
 
     expect(expenses).toHaveValue('24000');
 
@@ -198,7 +198,7 @@ describe('journeys', () => {
       expect(requests).toHaveLength(0);
       // Nothing past the first step can be opened until it is right.
       expect(stepTab('Personal details')).toBeDisabled();
-      expect(stepTab('Money')).toBeDisabled();
+      expect(stepTab('Results')).toBeDisabled();
 
       await user.click(
         within(summary).getByRole('button', {
@@ -284,7 +284,7 @@ describe('journeys', () => {
 
       await user.clear(age);
       await user.type(age, '36');
-      await openStep(user, 'Money');
+      await openStep(user, 'Results');
       await submit(user);
 
       expect(

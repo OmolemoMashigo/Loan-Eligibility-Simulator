@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-export type StepName = 'Loan details' | 'Personal details' | 'Money';
+export type StepName = 'Loan details' | 'Personal details' | 'Results';
 
 export async function openApp(page: Page): Promise<void> {
   await page.goto('/');
@@ -65,20 +65,20 @@ export async function fillMoneyStep(page: Page): Promise<void> {
 /** Fills in the first steps correctly and stops on the step you name. */
 export async function reachStep(
   page: Page,
-  name: 'Personal details' | 'Money',
+  name: 'Personal details' | 'Results',
 ): Promise<void> {
   await fillLoanStep(page);
   await next(page, 'Personal details');
 
-  if (name === 'Money') {
+  if (name === 'Results') {
     await fillPersonalStep(page);
-    await next(page, 'Money');
+    await next(page, 'Results');
   }
 }
 
 /** Fills in the spec sample, step by step, and stops on the last step. */
 export async function fillValidForm(page: Page): Promise<void> {
-  await reachStep(page, 'Money');
+  await reachStep(page, 'Results');
   await fillMoneyStep(page);
 }
 

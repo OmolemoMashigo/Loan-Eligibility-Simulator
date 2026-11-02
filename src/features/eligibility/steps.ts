@@ -31,7 +31,7 @@ export const FORM_STEPS: readonly FormStep[] = [
   },
   {
     id: 'money',
-    label: 'Money',
+    label: 'Results',
     fields: [
       'financialInfo.monthlyIncome',
       'financialInfo.monthlyExpenses',

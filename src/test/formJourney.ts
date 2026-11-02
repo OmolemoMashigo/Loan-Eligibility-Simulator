@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 
-export type StepName = 'Loan details' | 'Personal details' | 'Money';
+export type StepName = 'Loan details' | 'Personal details' | 'Results';
 
 /** The step bar's tab for a step. A finished step adds ", completed". */
 export function stepTab(name: StepName): HTMLElement {
@@ -66,20 +66,20 @@ export async function fillMoneyStep(user: UserEvent): Promise<void> {
 /** Fills in the first steps correctly and stops on the step you name. */
 export async function reachStep(
   user: UserEvent,
-  name: 'Personal details' | 'Money',
+  name: 'Personal details' | 'Results',
 ): Promise<void> {
   await fillLoanStep(user);
   await next(user, 'Personal details');
 
-  if (name === 'Money') {
+  if (name === 'Results') {
     await fillPersonalStep(user);
-    await next(user, 'Money');
+    await next(user, 'Results');
   }
 }
 
 /** Fills in the spec sample, step by step, and stops on the last step. */
 export async function fillValidForm(user: UserEvent): Promise<void> {
-  await reachStep(user, 'Money');
+  await reachStep(user, 'Results');
   await fillMoneyStep(user);
 }
 
