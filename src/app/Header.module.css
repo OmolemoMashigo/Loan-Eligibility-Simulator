@@ -1,18 +1,58 @@
 .header {
-  background-color: var(--color-surface);
-  border-top: var(--space-1) solid var(--color-brand);
-  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(
+    120deg,
+    var(--color-header-from),
+    var(--color-header-to)
+  );
+  color: var(--color-header-text);
+  box-shadow: var(--shadow-card);
+}
+
+/* Soft translucent discs, purely decorative. */
+.header::before,
+.header::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgb(255 255 255 / 7%);
+  pointer-events: none;
+}
+
+.header::before {
+  top: -7rem;
+  right: -3rem;
+  width: 16rem;
+  height: 16rem;
+}
+
+.header::after {
+  right: 9rem;
+  bottom: -6rem;
+  width: 11rem;
+  height: 11rem;
 }
 
 .inner {
+  position: relative;
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
   width: min(40rem, 100%);
   margin: 0 auto;
   padding: var(--space-6);
 }
 
+.mark {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
 .title {
   margin: 0;
-  color: var(--color-brand);
+  color: var(--color-header-text);
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
@@ -20,7 +60,12 @@
 
 @media (min-width: 768px) {
   .inner {
-    padding: var(--space-6) var(--space-8);
+    padding: var(--space-8);
+  }
+
+  .mark {
+    width: 3rem;
+    height: 3rem;
   }
 
   .title {

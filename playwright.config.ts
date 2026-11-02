@@ -23,12 +23,22 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
-      testMatch: ['journeys.spec.ts', 'a11y.spec.ts', 'keyboard.spec.ts'],
+      testMatch: [
+        'journeys.spec.ts',
+        'a11y.spec.ts',
+        'keyboard.spec.ts',
+        'theme.spec.ts',
+      ],
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'mobile',
-      testMatch: ['journeys.spec.ts', 'a11y.spec.ts', 'mobile.spec.ts'],
+      testMatch: [
+        'journeys.spec.ts',
+        'a11y.spec.ts',
+        'mobile.spec.ts',
+        'theme.spec.ts',
+      ],
       use: { ...devices['Pixel 7'] },
     },
   ],

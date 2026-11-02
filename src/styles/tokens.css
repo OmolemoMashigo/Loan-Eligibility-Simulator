@@ -1,32 +1,48 @@
 :root {
   color-scheme: light;
 
-  /* Colour — original calm banking palette. Not Capitec brand. */
-  --color-bg: #f4f1ea;
+  /* Colour: one blue, #2E71EF. Not Capitec brand. Neutral greys around it. */
+  --color-bg: #f5f7fb;
   --color-surface: #ffffff;
-  --color-surface-muted: #ebe6dc;
-  --color-border: #d4cfc4;
+  --color-surface-muted: #eef1f6;
+  --color-border: #e3e7ee;
   /* Edge of an input: needs 3:1 against its surroundings (WCAG 1.4.11). */
-  --color-border-control: #80868d;
+  --color-border-control: #667085;
 
-  --color-text: #1c2430;
-  --color-text-muted: #5c6570;
+  --color-text: #111827;
+  --color-text-muted: #4b5563;
   --color-text-on-brand: #ffffff;
 
-  --color-brand: #0f5c56;
-  --color-brand-hover: #0a4a45;
-  --color-brand-subtle: #e4f1ef;
+  /* Interactive fill: a darker shade of #2E71EF so small white labels stay AA. */
+  --color-brand: #1e5ae8;
+  --color-brand-hover: #1546c4;
+  --color-brand-subtle: #e8eeff;
+  --color-brand-bright: #2e71ef;
 
-  --color-success: #1b6b4a;
-  --color-success-subtle: #e5f4ec;
-  --color-danger: #9b2c2c;
-  --color-danger-subtle: #f8e6e6;
-  --color-warning: #8a5a12;
-  --color-warning-subtle: #f8eedb;
-  --color-info: #2c5282;
-  --color-info-subtle: #e7eef6;
+  --color-header-from: #2e71ef;
+  --color-header-to: #2e71ef;
+  --color-header-text: #ffffff;
+
+  --color-success: #166534;
+  --color-success-subtle: #f0fdf4;
+  --color-danger: #a02828;
+  --color-danger-subtle: #fbe7e7;
+  --color-warning: #8a5a0a;
+  --color-warning-subtle: #fbefd9;
+  --color-info: #1e40af;
+  --color-info-subtle: #eef2ff;
 
   --color-focus: var(--color-brand);
+
+  /* Depth and surfaces */
+  --shadow-card:
+    0 1px 2px rgb(17 24 39 / 6%), 0 12px 32px -16px rgb(17 24 39 / 18%);
+  --shadow-action: 0 10px 22px -10px rgb(46 113 239 / 55%);
+  --gradient-page: radial-gradient(
+    64rem 26rem at 50% -10rem,
+    var(--color-brand-subtle),
+    transparent 72%
+  );
 
   /* Type */
   --font-sans:
@@ -39,6 +55,10 @@
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.5rem;
   --font-size-2xl: 1.875rem;
+  --font-size-3xl: 2.25rem;
+
+  --tracking-tight: -0.015em;
+  --tracking-label: 0.04em;
 
   --line-height-tight: 1.25;
   --line-height-body: 1.5;
@@ -65,13 +85,52 @@
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-pill: 62.5rem;
 
   --focus-ring-width: 0.125rem;
   --focus-ring: var(--focus-ring-width) solid var(--color-focus);
 
   --duration-fast: 150ms;
   --duration-base: 200ms;
+  --duration-slow: 600ms;
   --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Dark theme: switched on with data-theme="dark" on <html> (see ThemeToggle). */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #0b0f17;
+  --color-surface: #121826;
+  --color-surface-muted: #1b2230;
+  --color-border: #2a3344;
+  --color-border-control: #8b95a8;
+
+  --color-text: #f3f5f9;
+  --color-text-muted: #a8b0c0;
+  --color-text-on-brand: #071433;
+
+  --color-brand: #7a9ef7;
+  --color-brand-hover: #9bb4f9;
+  --color-brand-subtle: #152044;
+  --color-brand-bright: #2e71ef;
+
+  --color-header-from: #2e71ef;
+  --color-header-to: #2e71ef;
+  --color-header-text: #ffffff;
+
+  --color-success: #4ade80;
+  --color-success-subtle: #052e16;
+  --color-danger: #ff9a9a;
+  --color-danger-subtle: #3a1b1b;
+  --color-warning: #f2c06b;
+  --color-warning-subtle: #3a2a0e;
+  --color-info: #93b4ff;
+  --color-info-subtle: #152044;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 35%), 0 14px 34px -16px rgb(0 0 0 / 60%);
+  --shadow-action: 0 10px 22px -10px rgb(46 113 239 / 40%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -84,6 +143,7 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;

@@ -85,6 +85,18 @@ describe('EligibilityResult', () => {
     expect(valueOf('Risk level')).toBe('Low');
   });
 
+  it('adds a decorative approval ring beside the facts, not inside the list', () => {
+    render(<EligibilityResult response={eligible} loanTerm={24} />);
+
+    const banner = screen.getByRole('status');
+    const ring = banner.querySelector('svg[aria-hidden="true"]');
+    const facts = banner.querySelector('dl');
+
+    expect(ring).not.toBeNull();
+    expect(facts?.contains(ring)).toBe(false);
+    expect(ring?.nextElementSibling).toBe(facts);
+  });
+
   it('shows the rand figures for the recommended loan', () => {
     render(<EligibilityResult response={eligible} loanTerm={24} />);
 

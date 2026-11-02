@@ -4,6 +4,7 @@ import { Alert } from '@/components/Alert/Alert';
 import { LoadingBlock } from '@/components/LoadingBlock/LoadingBlock';
 import { cx } from '@/components/cx';
 import { formatWholeRand } from '@/lib/format';
+import { BalanceChart } from './BalanceChart';
 import resultStyles from './EligibilityResult.module.css';
 import styles from './RepaymentSchedule.module.css';
 
@@ -73,6 +74,10 @@ function ScheduleTable({
 
   return (
     <>
+      <BalanceChart
+        loanAmount={loanAmount}
+        balances={schedule.map((row) => row.balance)}
+      />
       <table id={tableId} className={styles.table}>
         <caption className={styles.caption}>
           Monthly payments on {formatWholeRand(loanAmount)} over{' '}

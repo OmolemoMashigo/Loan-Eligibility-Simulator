@@ -9,6 +9,8 @@
 body {
   margin: 0;
   background-color: var(--color-bg);
+  background-image: var(--gradient-page);
+  background-repeat: no-repeat;
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--font-size-md);
@@ -19,6 +21,12 @@ body {
 :focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--space-1);
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: var(--tracking-tight);
 }
 
 #root {

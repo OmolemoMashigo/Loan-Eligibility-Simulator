@@ -49,5 +49,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // A plain script the page loads before React; it is not a module.
+    files: ['public/theme-init.js'],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
+  },
   eslintConfigPrettier,
 );

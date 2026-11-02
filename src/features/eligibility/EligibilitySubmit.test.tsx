@@ -7,7 +7,13 @@ import { apiMatch } from '@/mocks/api';
 import { SPEC_SAMPLE_REQUEST, evaluateEligibility } from '@/mocks/engine';
 import { setMockLatency } from '@/mocks/latency';
 import { server } from '@/mocks/server';
-import { fillValidForm, submit } from '@/test/formJourney';
+import {
+  fillValidForm,
+  openStep,
+  stepTab,
+  submit,
+  type StepName,
+} from '@/test/formJourney';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import { EligibilityForm } from './EligibilityForm';
 
@@ -32,9 +38,15 @@ async function renderForm(): Promise<UserEvent> {
   const user = userEvent.setup();
 
   renderWithProviders(<EligibilityForm />);
-  await screen.findByRole('heading', { name: 'Personal details' });
+  await screen.findByRole('heading', { name: 'Loan details' });
 
   return user;
+}
+
+/** From a result, goes back to the form and opens a step to change. */
+async function editDetails(user: UserEvent, step: StepName): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'Edit your details' }));
+  await openStep(user, step);
 }
 
 describe('EligibilityForm submit', () => {
@@ -52,23 +64,33 @@ describe('EligibilityForm submit', () => {
     server.close();
   });
 
-  it('lists every problem in a summary that takes focus and sends nothing', async () => {
+  it('lists the problems on a step in a summary that takes focus, and stays on the step', async () => {
     const requests = recordRequests();
     const user = await renderForm();
 
-    await submit(user);
+    await user.click(screen.getByRole('button', { name: 'Next' }));
 
     const summary = await screen.findByRole('alert', {
-      name: /please fix 8 problems before continuing/i,
+      name: /please fix 3 problems before continuing/i,
     });
 
     expect(summary).toHaveFocus();
-    expect(within(summary).getAllByRole('button')).toHaveLength(8);
+    expect(within(summary).getAllByRole('button')).toHaveLength(3);
     expect(requests).toHaveLength(0);
+    expect(
+      screen.getByRole('tabpanel', { name: /^Loan details/ }),
+    ).toBeVisible();
+    expect(stepTab('Personal details')).toBeDisabled();
 
-    await user.click(within(summary).getByRole('button', { name: /^Age: / }));
+    await user.click(
+      within(summary).getByRole('button', {
+        name: /^Amount you want to borrow: /,
+      }),
+    );
 
-    expect(screen.getByRole('textbox', { name: 'Age' })).toHaveFocus();
+    expect(
+      screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
+    ).toHaveFocus();
   });
 
   it('sends the typed request when the form is valid and confirms it', async () => {
@@ -87,9 +109,14 @@ describe('EligibilityForm submit', () => {
       screen.getByRole('heading', { level: 2, name: 'Your estimate' }),
     ).toBeInTheDocument();
     expect(requests).toEqual([SPEC_SAMPLE_REQUEST]);
+    // The result stands on its own: the form and its step bar are out of sight.
     expect(
-      screen.getByRole('button', { name: 'Check my eligibility' }),
-    ).not.toHaveAttribute('aria-disabled');
+      screen.queryByRole('button', { name: 'Check my eligibility' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Edit your details' }),
+    ).toBeInTheDocument();
   });
 
   it('leaves out a blank credit score and the duration for unemployed (SI-3, SI-8)', async () => {
@@ -100,7 +127,9 @@ describe('EligibilityForm submit', () => {
     await user.clear(
       screen.getByRole('textbox', { name: 'Credit score (optional)' }),
     );
+    await openStep(user, 'Personal details');
     await user.click(screen.getByRole('radio', { name: 'Unemployed' }));
+    await openStep(user, 'Money');
     await submit(user);
 
     await screen.findByRole('status', { name: /likely eligible/i });
@@ -202,6 +231,8 @@ describe('EligibilityForm submit', () => {
     await fillValidForm(user);
     await submit(user);
     await screen.findByRole('status', { name: /you are likely eligible/i });
+
+    await editDetails(user, 'Money');
 
     const expenses = screen.getByRole('textbox', { name: 'Monthly expenses' });
     await user.clear(expenses);
@@ -398,15 +429,24 @@ describe('EligibilityForm submit', () => {
       );
       expect(term).toHaveTextContent('up to 60 months');
 
-      // The result is still on screen and the form still holds the user's answers.
+      // Back to the form, which still holds every answer, one step at a time.
       await user.click(
         within(card).getByRole('button', { name: 'Edit details' }),
       );
 
-      const age = screen.getByRole('textbox', { name: 'Age' });
+      expect(
+        screen.getByRole('tabpanel', { name: /^Loan details/ }),
+      ).toHaveFocus();
+      expect(
+        screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
+      ).toHaveValue('150000');
 
-      expect(age).toHaveFocus();
-      expect(age).toHaveValue('35');
+      await openStep(user, 'Personal details');
+
+      expect(screen.getByRole('textbox', { name: 'Age' })).toHaveValue('35');
+
+      await openStep(user, 'Money');
+
       expect(
         screen.getByRole('textbox', { name: 'Monthly expenses' }),
       ).toHaveValue('24000');
@@ -631,6 +671,7 @@ describe('EligibilityForm submit', () => {
       const user = await renderForm();
 
       await fillValidForm(user);
+      await openStep(user, 'Loan details');
       await user.clear(
         screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
       );
@@ -638,6 +679,7 @@ describe('EligibilityForm submit', () => {
         screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
         '20000',
       );
+      await openStep(user, 'Money');
       await submit(user);
       await screen.findByRole('status', { name: /you are likely eligible/i });
 
@@ -744,6 +786,7 @@ describe('EligibilityForm submit', () => {
         { timeout: 3000 },
       );
 
+      await editDetails(user, 'Money');
       await submit(user);
 
       await waitFor(() => {
@@ -774,6 +817,8 @@ describe('EligibilityForm submit', () => {
       await user.clear(whatIfAmount());
       await user.type(whatIfAmount(), '40000');
       await screen.findByText('Updating your results…', {}, { timeout: 3000 });
+
+      await editDetails(user, 'Money');
 
       const expenses = screen.getByRole('textbox', {
         name: 'Monthly expenses',
@@ -825,6 +870,11 @@ describe('EligibilityForm submit', () => {
     const age = screen.getByRole('textbox', { name: 'Age' });
 
     expect(summary).toHaveFocus();
+    // The error is on the personal step, so that step opens to show it.
+    expect(stepTab('Personal details')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(age).toBeInvalid();
     expect(age).toHaveAccessibleDescription(/age must be between 18 and 65/i);
   });

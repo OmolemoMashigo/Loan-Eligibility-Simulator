@@ -27,17 +27,34 @@
   gap: var(--space-3);
   min-height: var(--touch-min);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard);
 }
 
 .option:hover {
   background-color: var(--color-surface-muted);
 }
 
+.option:has(.input:checked) {
+  background-color: var(--color-brand-subtle);
+}
+
 .fieldset:disabled .option {
   color: var(--color-text-muted);
   cursor: not-allowed;
+}
+
+.icon {
+  display: flex;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-brand);
+}
+
+.fieldset:disabled .icon {
+  color: var(--color-text-muted);
 }
 
 .input {
