@@ -97,7 +97,7 @@ test('the arrow keys move between the steps that can be opened', async ({
     page.getByRole('tab', { name: /^Personal details/ }),
   ).toBeFocused();
 
-  // Money is still locked, so End stays on the last open step.
+  // Results is still locked, so End stays on the last open step.
   await page.keyboard.press('End');
 
   await expect(
@@ -149,7 +149,7 @@ test('the whole journey works from the keyboard alone', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Next' })).toBeFocused();
   await keyboard.press('Enter');
 
-  await expect(page.getByRole('tabpanel', { name: /^Money/ })).toBeFocused();
+  await expect(page.getByRole('tabpanel', { name: /^Results/ })).toBeFocused();
 
   for (const value of ['25000', '15000', '5000', '650']) {
     await keyboard.press('Tab');

@@ -87,7 +87,7 @@ test('decline path: read why, go back to the details, fix them, and get approved
   ).toBeFocused();
 
   // Their answers are still there, on the step they were given.
-  await openStep(page, 'Money');
+  await openStep(page, 'Results');
   await expect(
     page.getByRole('textbox', { name: 'Monthly expenses' }),
   ).toHaveValue('24000');
@@ -111,13 +111,13 @@ test('later steps stay locked until the open step is filled in', async ({
   page,
 }) => {
   await expect(stepTab(page, 'Personal details')).toBeDisabled();
-  await expect(stepTab(page, 'Money')).toBeDisabled();
+  await expect(stepTab(page, 'Results')).toBeDisabled();
 
   await fillLoanStep(page);
   await next(page, 'Personal details');
 
   await expect(stepTab(page, 'Personal details')).toBeEnabled();
-  await expect(stepTab(page, 'Money')).toBeDisabled();
+  await expect(stepTab(page, 'Results')).toBeDisabled();
 });
 
 test('errors: an empty step lists its problems and links to the fields', async ({
@@ -164,6 +164,20 @@ test('blank credit score: accepted, priced at the unknown-score rate, and flagge
   await expect(page.getByRole('alert', { name: /please fix/i })).toHaveCount(0);
   await expect(figure(page, 'Interest rate')).toHaveText('14,5% a year');
   await expect(page.getByText(ASK_FOR_SCORE)).toBeVisible();
+});
+
+test('the browser Back button stays on the current step', async ({ page }) => {
+  await fillLoanStep(page);
+  await next(page, 'Personal details');
+
+  await page.evaluate('window.history.back()');
+
+  await expect(
+    page.getByRole('tabpanel', { name: /^Personal details/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Loan Eligibility Simulator' }),
+  ).toBeVisible();
 });
 
 test('what-if: changing the amount updates the estimate without losing the result', async ({

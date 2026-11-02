@@ -35,7 +35,7 @@ export function FinancialDetailsSection({
       aria-labelledby="financial-details-heading"
     >
       <h2 className={styles.heading} id="financial-details-heading">
-        Money
+        Results
       </h2>
       <div className={styles.fields}>
         <CurrencyField

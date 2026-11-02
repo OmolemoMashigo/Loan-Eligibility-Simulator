@@ -45,7 +45,7 @@ describe('EligibilityForm steps', () => {
 
     expect(stepTab('Loan details')).toHaveAttribute('aria-selected', 'true');
     expect(stepTab('Personal details')).toBeDisabled();
-    expect(stepTab('Money')).toBeDisabled();
+    expect(stepTab('Results')).toBeDisabled();
     expect(screen.getByRole('tabpanel')).toBeVisible();
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
     expect(
@@ -70,14 +70,14 @@ describe('EligibilityForm steps', () => {
     expect(
       screen.getByRole('tab', { name: /^Loan details\s?, completed$/ }),
     ).toBeEnabled();
-    expect(stepTab('Money')).toBeDisabled();
+    expect(stepTab('Results')).toBeDisabled();
     expect(screen.getByRole('tabpanel')).toHaveFocus();
   });
 
   it('offers the final action only on the last step', async () => {
     const user = await renderForm();
 
-    await reachStep(user, 'Money');
+    await reachStep(user, 'Results');
 
     expect(
       screen.getByRole('button', { name: 'Check my eligibility' }),
@@ -168,7 +168,7 @@ describe('EligibilityForm steps', () => {
     ).toBeVisible();
 
     await fillPersonalStep(user);
-    await next(user, 'Money');
+    await next(user, 'Results');
   });
 
   it('cannot skip past a mistake made when editing an earlier step', async () => {
@@ -182,12 +182,12 @@ describe('EligibilityForm steps', () => {
     await screen.findByRole('tabpanel', { name: /^Loan details/ });
 
     // Every step is open again, but a bad answer still blocks the way forward.
-    expect(stepTab('Money')).toBeEnabled();
+    expect(stepTab('Results')).toBeEnabled();
 
     await user.clear(
       screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
     );
-    await user.click(stepTab('Money'));
+    await user.click(stepTab('Results'));
 
     expect(
       await screen.findByRole('alert', {

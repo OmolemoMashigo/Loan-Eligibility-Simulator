@@ -145,9 +145,11 @@ describe('EligibilityForm', () => {
   it('shows the money fields with rand inputs and an optional credit score', async () => {
     const user = userEvent.setup();
     await renderForm();
-    await reachStep(user, 'Money');
+    await reachStep(user, 'Results');
 
-    expect(screen.getByRole('heading', { name: 'Money' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Results' }),
+    ).toBeInTheDocument();
 
     const income = screen.getByRole('textbox', { name: 'Monthly income' });
     expect(income).toBeRequired();
@@ -176,7 +178,7 @@ describe('EligibilityForm', () => {
   it('accepts a blank credit score and 0 existing debt on blur (SI-8, SI-9)', async () => {
     const user = userEvent.setup();
     await renderForm();
-    await reachStep(user, 'Money');
+    await reachStep(user, 'Results');
 
     await user.click(
       screen.getByRole('textbox', { name: 'Credit score (optional)' }),
@@ -208,7 +210,7 @@ describe('EligibilityForm', () => {
   it('shows the API messages for low income and an out-of-range score', async () => {
     const user = userEvent.setup();
     await renderForm();
-    await reachStep(user, 'Money');
+    await reachStep(user, 'Results');
 
     await user.type(
       screen.getByRole('textbox', { name: 'Monthly income' }),

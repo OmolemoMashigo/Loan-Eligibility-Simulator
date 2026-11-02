@@ -129,7 +129,7 @@ describe('EligibilityForm submit', () => {
     );
     await openStep(user, 'Personal details');
     await user.click(screen.getByRole('radio', { name: 'Unemployed' }));
-    await openStep(user, 'Money');
+    await openStep(user, 'Results');
     await submit(user);
 
     await screen.findByRole('status', { name: /likely eligible/i });
@@ -232,7 +232,7 @@ describe('EligibilityForm submit', () => {
     await submit(user);
     await screen.findByRole('status', { name: /you are likely eligible/i });
 
-    await editDetails(user, 'Money');
+    await editDetails(user, 'Results');
 
     const expenses = screen.getByRole('textbox', { name: 'Monthly expenses' });
     await user.clear(expenses);
@@ -445,7 +445,7 @@ describe('EligibilityForm submit', () => {
 
       expect(screen.getByRole('textbox', { name: 'Age' })).toHaveValue('35');
 
-      await openStep(user, 'Money');
+      await openStep(user, 'Results');
 
       expect(
         screen.getByRole('textbox', { name: 'Monthly expenses' }),
@@ -679,7 +679,7 @@ describe('EligibilityForm submit', () => {
         screen.getByRole('textbox', { name: 'Amount you want to borrow' }),
         '20000',
       );
-      await openStep(user, 'Money');
+      await openStep(user, 'Results');
       await submit(user);
       await screen.findByRole('status', { name: /you are likely eligible/i });
 
@@ -786,7 +786,7 @@ describe('EligibilityForm submit', () => {
         { timeout: 3000 },
       );
 
-      await editDetails(user, 'Money');
+      await editDetails(user, 'Results');
       await submit(user);
 
       await waitFor(() => {
@@ -818,7 +818,7 @@ describe('EligibilityForm submit', () => {
       await user.type(whatIfAmount(), '40000');
       await screen.findByText('Updating your results…', {}, { timeout: 3000 });
 
-      await editDetails(user, 'Money');
+      await editDetails(user, 'Results');
 
       const expenses = screen.getByRole('textbox', {
         name: 'Monthly expenses',

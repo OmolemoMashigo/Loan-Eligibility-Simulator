@@ -16,6 +16,7 @@ import {
 } from '@/api';
 import { Alert } from '@/components/Alert/Alert';
 import { cx } from '@/components/cx';
+import { resetWindowScroll, revealScreen } from '@/lib/revealScreen';
 import { LoadingBlock } from '@/components/LoadingBlock/LoadingBlock';
 import { stepPanelId, stepTabId } from '@/components/StepTabs/ids';
 import { StepTabs } from '@/components/StepTabs/StepTabs';
@@ -200,7 +201,7 @@ function EligibilityFormFields({
         ?.querySelector<HTMLElement>(`[name="${focusRequest.field}"]`)
         ?.focus();
     } else {
-      panels.current[focusRequest.step]?.focus();
+      revealScreen(panels.current[focusRequest.step] ?? null);
     }
   }, [focusRequest]);
 
@@ -258,6 +259,8 @@ function EligibilityFormFields({
 
     if (moveFocus) {
       setFocusRequest({ step: target });
+    } else {
+      resetWindowScroll();
     }
   }
 
