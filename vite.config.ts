@@ -12,6 +12,11 @@ export default defineConfig({
       '@': path.resolve(rootDir, 'src'),
     },
   },
+  server: {
+    host: true,
+    // Phone testing: Cloudflare tunnels and the Mac's LAN address.
+    allowedHosts: true,
+  },
   test: {
     environment: 'jsdom',
     // Playwright journeys run with `npm run test:e2e`.

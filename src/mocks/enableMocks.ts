@@ -9,6 +9,27 @@ export async function enableMocks(): Promise<void> {
     return;
   }
 
-  const { startMockWorker } = await import('./browser');
-  await startMockWorker();
+  const { SIMULATED_LATENCY_MS } = await import('./engine');
+  const { setMockLatency } = await import('./latency');
+  setMockLatency(SIMULATED_LATENCY_MS);
+
+  if (window.isSecureContext) {
+    try {
+      const { startMockWorker } = await import('./browser');
+      await Promise.race([
+        startMockWorker(),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => {
+            reject(new Error('Mock worker timed out'));
+          }, 4000);
+        }),
+      ]);
+      return;
+    } catch {
+      // Phone HTTP, a missing worker file, or a timed-out registration.
+    }
+  }
+
+  const { startInMemoryMocks } = await import('./inMemory');
+  startInMemoryMocks();
 }
